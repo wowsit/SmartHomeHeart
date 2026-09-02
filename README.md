@@ -49,7 +49,15 @@ Der Kalender läuft – wie alles – über Home Assistant. Für iCloud ist das 
    ],
    ```
 
-Das Dashboard liest die Termine über `GET /api/calendars/<entity>` (Monatsbereich, alle 5 Minuten aktualisiert) und startet direkt in der Monatsansicht (`config.startPage`).
+Das Dashboard liest die Termine über `GET /api/calendars/<entity>` (Monatsbereich, alle 5 Minuten aktualisiert). Die Übersicht zeigt den Monat kompakt; ein Tipp auf den Monatsnamen öffnet die Kalender-Seite (Monate blättern, Termine des Tages, **Plus** zum Eintragen mit Bildschirmtastatur). Neue Termine gehen per `calendar.create_event` direkt in den iCloud-Kalender.
+
+### Erinnerungen (immer an)
+
+iCloud speichert über CalDAV keine Alarm-Einstellung, die HA setzen könnte – deshalb übernimmt HA die Erinnerung für **alle** Termine des Kalenders: `deploy/ha/automation-termin-erinnerung.yaml` schickt 30 Minuten vor jedem Termin eine Push-Nachricht an die Home-Assistant-App (Handy). In HA unter *Einstellungen → Automationen → Neue Automation → ⋮ → In YAML bearbeiten* einfügen, `calendar.…` und `notify.mobile_app_…` anpassen.
+
+## Wetter-Standort
+
+Das Wetter kommt aus HA (`weather.home`, Met.no). Standort in HA setzen: *Einstellungen → System → Allgemein → Standort* → Fichtenweg 10A, 26209 Hatten (Sandkrug). Der Ortsname im Dashboard steht in `config.locationName`.
 
 ## Auf dem Raspberry Pi
 

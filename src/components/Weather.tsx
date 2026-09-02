@@ -26,7 +26,7 @@ export function Weather({ compact = false }: { compact?: boolean }) {
         <WeatherIcon condition={w.state} size={compact ? 64 : 96} />
         <div>
           <div className="weather-temp">{Math.round(a.temperature)}°</div>
-          <div className="weather-cond">{conditionLabel[w.state] ?? w.state}</div>
+          <div className="weather-cond">{conditionLabel[w.state] ?? w.state} · {config.locationName}</div>
         </div>
         {!compact && (
           <div className="weather-meta">

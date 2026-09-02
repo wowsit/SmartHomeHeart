@@ -1,0 +1,22 @@
+# Erinnerung 30 Minuten vor jedem Termin – gilt automatisch für alle Einträge des Kalenders,
+# auch für die, die am Dashboard über "+" angelegt werden.
+alias: Termin-Erinnerung (Dashboard-Kalender)
+description: Push-Nachricht 30 Minuten vor jedem Termin
+triggers:
+  - trigger: calendar
+    event: start
+    offset: "-0:30:0"
+    entity_id: calendar.meine_termine   # <- eigene Kalender-Entity
+actions:
+  - action: notify.mobile_app_iphone    # <- eigenes Handy (Home-Assistant-App)
+    data:
+      title: "In 30 Minuten: {{ trigger.calendar_event.summary }}"
+      message: >-
+        {% if trigger.calendar_event.all_day %}Ganztägig{% else %}
+        {{ as_timestamp(trigger.calendar_event.start) | timestamp_custom('%H:%M') }}–{{ as_timestamp(trigger.calendar_event.end) | timestamp_custom('%H:%M') }}
+        {% endif %}{% if trigger.calendar_event.location %} · {{ trigger.calendar_event.location }}{% endif %}
+  # Optional: auch am Wand-Display/Lautsprecher ansagen
+  # - action: tts.speak
+  #   target: { entity_id: tts.piper }
+  #   data: { media_player_entity_id: media_player.wohnzimmer, message: "Erinnerung: {{ trigger.calendar_event.summary }} in 30 Minuten" }
+mode: queued
