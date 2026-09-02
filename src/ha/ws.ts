@@ -2,7 +2,7 @@ import {
   createConnection, createLongLivedTokenAuth, subscribeEntities, callService as haCallService,
   type Connection, type HassEntities,
 } from 'home-assistant-js-websocket'
-import type { HaBackend, EntityMap, ConnState, ForecastDay, CalendarEvent } from './types'
+import type { NewCalendarEvent, HaBackend, EntityMap, ConnState, ForecastDay, CalendarEvent } from './types'
 
 /** Echte Anbindung an Home Assistant per WebSocket (Live-Updates) + REST (Kalender). */
 export class HaWsBackend implements HaBackend {
@@ -84,5 +84,13 @@ export class HaWsBackend implements HaBackend {
       } catch (e) { console.error('calendar fetch failed', id, e); return [] }
     }))
     return all.flat().sort((a, b) => a.start.localeCompare(b.start))
+  }
+
+  async createCalendarEvent(entityId: string, ev: NewCalendarEvent): Promise<void> {
+    const conn = await this.connPromise
+    const data = ev.allDay
+      ? { summary: ev.summary, description: ev.description, start_date: ev.start, end_date: ev.end }
+      : { summary: ev.summary, description: ev.description, start_date_time: ev.start, end_date_time: ev.end }
+    await haCallService(conn, 'calendar', 'create_event', data, { entity_id: entityId })
   }
 }

@@ -4,11 +4,15 @@ import { useHa } from '../ha/useHa'
 import type { CalendarEvent } from '../ha/types'
 import { Clock } from './Clock'
 import { Icon } from './Icons'
+import { AddEventSheet } from './AddEvent'
 
-const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+export const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 const calColor = (entity: string) => config.calendars.find((c) => c.entity === entity)?.color ?? 'grey'
 const entityIds = config.calendars.map((c) => c.entity)
+
+/** Wird nach dem Anlegen eines Termins gefeuert, damit alle Ansichten neu laden. */
+export const calendarBus = new EventTarget()
 
 /** Alle Tage (als Key), die ein Termin belegt – mehrtägige Termine erscheinen an jedem Tag. */
 function eventDays(ev: CalendarEvent): string[] {
@@ -30,7 +34,8 @@ export function useCalendar(start: Date, end: Date) {
     const load = () => ha.getCalendarEvents(entityIds, new Date(s), new Date(e)).then((ev) => alive && setEvents(ev)).catch(console.error)
     load()
     const t = setInterval(load, 5 * 60 * 1000)
-    return () => { alive = false; clearInterval(t) }
+    calendarBus.addEventListener('changed', load)
+    return () => { alive = false; clearInterval(t); calendarBus.removeEventListener('changed', load) }
   }, [ha, s, e])
   return events
 }
@@ -53,37 +58,10 @@ function EventRow({ ev, now }: { ev: CalendarEvent; now: Date }) {
   )
 }
 
-/** Kompakte Liste für die Übersicht: die nächsten Termine (heute + morgen) */
-export function Agenda({ limit = 4 }: { limit?: number }) {
-  const [range] = useState(() => { const a = new Date(); a.setHours(0, 0, 0, 0); const b = new Date(a); b.setDate(b.getDate() + 2); return [a, b] })
-  const events = useCalendar(range[0], range[1])
-  const now = new Date()
-  const today = dayKey(now)
-  const upcoming = events.filter((e) => e.allDay || new Date(e.end) >= now).slice(0, limit)
-  if (upcoming.length === 0) return <div className="card agenda"><div className="empty">Heute und morgen keine Termine</div></div>
-  return (
-    <div className="card agenda">
-      {upcoming.map((ev, i) => (
-        <div key={i} className="agenda-row">
-          <span className="agenda-day">{eventDays(ev).includes(today) ? 'Heute' : 'Morgen'}</span>
-          <EventRow ev={ev} now={now} />
-        </div>
-      ))}
-    </div>
-  )
-}
-
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
-const MAX_CHIPS = 4
 
-/** Startbildschirm: Monatsraster mit allen Tagen, darunter die Termine des angetippten Tages. */
-export function CalendarPage() {
-  const today = useToday()
-  const [monthOffset, setMonthOffset] = useState(0)
-  const [selected, setSelected] = useState(today)
-  const [lastToday, setLastToday] = useState(today)
-  if (today !== lastToday) { setLastToday(today); setSelected(today); setMonthOffset(0) } // Tageswechsel über Nacht
-
+/** Monatszustand: Raster-Tage + Termine pro Tag */
+function useMonth(monthOffset: number) {
   const now = new Date()
   const first = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1)
   const gridStart = new Date(first); gridStart.setDate(1 - ((first.getDay() + 6) % 7)) // Montag vor dem 1.
@@ -92,21 +70,92 @@ export function CalendarPage() {
     return Array.from({ length: rows * 7 }, (_, i) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + i); return d })
   }, [first.getTime()]) // eslint-disable-line react-hooks/exhaustive-deps
   const gridEnd = new Date(cells[cells.length - 1]); gridEnd.setDate(gridEnd.getDate() + 1)
-
   const events = useCalendar(gridStart, gridEnd)
   const byDay = useMemo(() => {
     const m = new Map<string, CalendarEvent[]>()
     for (const ev of events) for (const k of eventDays(ev)) (m.get(k) ?? m.set(k, []).get(k)!).push(ev)
     return m
   }, [events])
+  return { first, cells, byDay }
+}
 
-  const selDate = new Date(selected + 'T00:00:00')
+function MonthGrid({ cells, first, byDay, today, selected, onSelect, compact }: {
+  cells: Date[]; first: Date; byDay: Map<string, CalendarEvent[]>; today: string; selected: string; onSelect: (k: string) => void; compact?: boolean
+}) {
+  const maxChips = compact ? 2 : 4
+  return (
+    <>
+      <div className="month-weekdays">{WEEKDAYS.map((w) => <span key={w}>{w}</span>)}</div>
+      <div className={`month-grid ${compact ? 'compact' : ''}`} style={{ gridTemplateRows: `repeat(${cells.length / 7}, minmax(0, 1fr))` }}>
+        {cells.map((d) => {
+          const k = dayKey(d)
+          const list = byDay.get(k) ?? []
+          const cls = ['day', d.getMonth() !== first.getMonth() ? 'other' : '', k === today ? 'today' : '', k === selected ? 'selected' : '', d.getDay() === 0 || d.getDay() === 6 ? 'weekend' : ''].join(' ')
+          return (
+            <button key={k} className={cls} onClick={() => onSelect(k)}>
+              <span className="day-num">{d.getDate()}</span>
+              {compact ? (
+                <span className="dots">{list.slice(0, 3).map((ev, i) => <span key={i} className={`event-dot cal-${calColor(ev.calendar)}`} />)}</span>
+              ) : (
+                <span className="chips">
+                  {list.slice(0, maxChips).map((ev, i) => <span key={i} className={`chip cal-${calColor(ev.calendar)}`}>{ev.summary}</span>)}
+                  {list.length > maxChips && <span className="chip more">+{list.length - maxChips}</span>}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </>
+  )
+}
+
+const dayLabel = (k: string, today: string) => {
+  const d = new Date(k + 'T00:00:00')
+  return `${k === today ? 'Heute' : d.toLocaleDateString('de-DE', { weekday: 'long' })} · ${d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}`
+}
+
+/** Kompakter Monatskalender für die Übersicht – Tag antippen zeigt die Termine direkt darunter, Monatsname öffnet die Kalender-Seite. */
+export function CalendarWidget({ onOpen }: { onOpen: () => void }) {
+  const today = useToday()
+  const [selected, setSelected] = useState(today)
+  const [lastToday, setLastToday] = useState(today)
+  if (today !== lastToday) { setLastToday(today); setSelected(today) }
+  const { first, cells, byDay } = useMonth(0)
+  const now = new Date()
+  const list = byDay.get(selected) ?? []
+
+  return (
+    <div className="card cal-widget">
+      <button className="cal-widget-head" onClick={onOpen}>
+        <span className="cal-widget-month">{first.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</span>
+        <Icon.chevR size={24} />
+      </button>
+      <MonthGrid cells={cells} first={first} byDay={byDay} today={today} selected={selected} onSelect={setSelected} compact />
+      <div className="cal-widget-day">
+        <div className="cal-widget-day-title">{dayLabel(selected, today)}</div>
+        {list.length === 0 && <div className="empty">Keine Termine</div>}
+        {list.slice(0, 3).map((ev, i) => <EventRow key={i} ev={ev} now={now} />)}
+        {list.length > 3 && <button className="linkish" onClick={onOpen}>+{list.length - 3} weitere</button>}
+      </div>
+    </div>
+  )
+}
+
+/** Kalender-Seite: großes Monatsraster, Monate blättern, Termine des Tages, Plus zum Eintragen. */
+export function CalendarPage({ onBack }: { onBack: () => void }) {
+  const today = useToday()
+  const [monthOffset, setMonthOffset] = useState(0)
+  const [selected, setSelected] = useState(today)
+  const [adding, setAdding] = useState(false)
+  const { first, cells, byDay } = useMonth(monthOffset)
+  const now = new Date()
   const selList = byDay.get(selected) ?? []
-  const selLabel = selected === today ? 'Heute' : selDate.toLocaleDateString('de-DE', { weekday: 'long' })
 
   return (
     <div className="page calendar-page">
       <header className="cal-head">
+        <button className="back" onClick={onBack}><Icon.home size={26} /><span>Übersicht</span></button>
         <div className="cal-month">
           <button className="round" onClick={() => setMonthOffset(monthOffset - 1)} aria-label="Vormonat"><Icon.chevL size={28} /></button>
           <h1 onClick={() => { setMonthOffset(0); setSelected(today) }}>{first.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</h1>
@@ -116,29 +165,14 @@ export function CalendarPage() {
       </header>
 
       <div className="card month">
-        <div className="month-weekdays">{WEEKDAYS.map((w) => <span key={w}>{w}</span>)}</div>
-        <div className="month-grid" style={{ gridTemplateRows: `repeat(${cells.length / 7}, minmax(0, 1fr))` }}>
-          {cells.map((d) => {
-            const k = dayKey(d)
-            const list = byDay.get(k) ?? []
-            const cls = ['day', d.getMonth() !== first.getMonth() ? 'other' : '', k === today ? 'today' : '', k === selected ? 'selected' : '', d.getDay() === 0 || d.getDay() === 6 ? 'weekend' : ''].join(' ')
-            return (
-              <button key={k} className={cls} onClick={() => setSelected(k)}>
-                <span className="day-num">{d.getDate()}</span>
-                <span className="chips">
-                  {list.slice(0, MAX_CHIPS).map((ev, i) => (
-                    <span key={i} className={`chip cal-${calColor(ev.calendar)} ${ev.allDay ? 'allday' : ''}`}>{ev.summary}</span>
-                  ))}
-                  {list.length > MAX_CHIPS && <span className="chip more">+{list.length - MAX_CHIPS}</span>}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        <MonthGrid cells={cells} first={first} byDay={byDay} today={today} selected={selected} onSelect={setSelected} />
       </div>
 
       <section className="day-detail">
-        <h3>{selLabel} · {selDate.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}</h3>
+        <div className="day-detail-head">
+          <h3>{dayLabel(selected, today)}</h3>
+          <button className="round primary" onClick={() => setAdding(true)} aria-label="Termin eintragen"><Icon.plus size={28} /></button>
+        </div>
         <div className="card day-events">
           {selList.length === 0 && <div className="empty">Keine Termine</div>}
           {selList.map((ev, i) => <EventRow key={i} ev={ev} now={now} />)}
@@ -150,6 +184,8 @@ export function CalendarPage() {
           {config.calendars.map((c) => <span key={c.entity} className={`cal-${c.color}`}><span className="event-dot" />{c.name}</span>)}
         </div>
       )}
+
+      {adding && <AddEventSheet day={selected} onClose={() => setAdding(false)} />}
     </div>
   )
 }

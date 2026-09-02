@@ -155,3 +155,27 @@ export function SmarthomePage() {
     </div>
   )
 }
+
+/** Übersicht: 4 Panels für die wichtigsten Lichter (config.lights) */
+export function LightsWidget() {
+  const entities = useEntities()
+  const ha = useHa()
+  return (
+    <div className="lights">
+      {config.lights.slice(0, 4).map(({ entity: id, name }) => {
+        const e = entities[id]
+        const on = e?.state === 'on'
+        const b = e?.attributes.brightness as number | undefined
+        const pct = on && b != null ? Math.round((b / 255) * 100) : null
+        return (
+          <button key={id} className={`light-panel ${on ? 'on' : ''} ${e ? '' : 'missing'}`} disabled={!e}
+            onClick={() => ha.callService(domainOf(id), 'toggle', { entity_id: id })}>
+            <span className="light-icon"><Icon.bulb size={30} /></span>
+            <span className="light-name">{name ?? e?.attributes.friendly_name ?? id.split('.')[1]}</span>
+            <span className="light-state">{!e ? 'Nicht gefunden' : on ? (pct != null ? `${pct} %` : 'An') : 'Aus'}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}

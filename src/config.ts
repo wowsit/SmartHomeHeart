@@ -16,7 +16,16 @@ export interface CalendarConfig {
 }
 
 export const config = {
+  /** Wetter-Entity aus HA. Der Standort (Sandkrug, Fichtenweg 10A, 26209 Hatten) wird in HA gesetzt: Einstellungen → System → Allgemein → Standort. */
   weather: 'weather.home',
+  locationName: 'Sandkrug',
+  /** Die 4 wichtigsten Lichter für das Widget auf der Übersicht */
+  lights: [
+    { entity: 'light.wohnzimmer_decke', name: 'Wohnzimmer' },
+    { entity: 'light.kueche_decke', name: 'Küche' },
+    { entity: 'light.flur', name: 'Flur' },
+    { entity: 'light.schlafzimmer', name: 'Schlafzimmer' },
+  ] as { entity: string; name?: string }[],
   /** Kalender-Entities aus Home Assistant. Reihenfolge = Reihenfolge in der Legende. */
   calendars: [
     { entity: 'calendar.meine_termine', name: 'Meine Termine', color: 'green' },
@@ -42,6 +51,6 @@ export const config = {
   /** Display-Ausrichtung: 'portrait' = 1080×1920 (Wandmontage hochkant), 'landscape' = 1920×1080 */
   orientation: 'portrait' as 'portrait' | 'landscape',
   /** Seite nach dem Start / nach dem Bildschirmschoner */
-  startPage: 'calendar' as 'calendar' | 'home' | 'smarthome' | 'music',
+  startPage: 'home' as 'home' | 'smarthome' | 'music',
   screensaverAfter: 300,
 }

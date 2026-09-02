@@ -3,14 +3,13 @@ import { config } from './config'
 import { createBackend, HaContext, useConnState, useEntities } from './ha/useHa'
 import { Clock } from './components/Clock'
 import { Weather } from './components/Weather'
-import { Agenda, CalendarPage } from './components/Calendar'
+import { CalendarPage, CalendarWidget } from './components/Calendar'
 import { MediaPlayer } from './components/Media'
-import { RoomSummary, SmarthomePage } from './components/Smarthome'
+import { LightsWidget, RoomSummary, SmarthomePage } from './components/Smarthome'
 import { Icon } from './components/Icons'
 
 type Page = 'home' | 'smarthome' | 'calendar' | 'music'
 const NAV: { id: Page; label: string; icon: keyof typeof Icon }[] = [
-  { id: 'calendar', label: 'Kalender', icon: 'calendar' },
   { id: 'home', label: 'Übersicht', icon: 'home' },
   { id: 'smarthome', label: 'Zuhause', icon: 'grid' },
   { id: 'music', label: 'Musik', icon: 'music' },
@@ -56,32 +55,24 @@ function ConnBadge() {
   )
 }
 
-function HomePagePortrait() {
-  const entities = useEntities()
+/** Always-on-Startseite: Uhr + Wetter, Kalender als Mittelpunkt, 4 Lichter, Musik */
+function HomePagePortrait({ openCalendar }: { openCalendar: () => void }) {
   return (
     <div className="page home-portrait">
       <header className="hero">
         <Clock />
         <Weather compact />
       </header>
-      <section>
-        <h3>Zuhause</h3>
-        <div className="rooms">
-          {config.rooms.map((r) => <RoomSummary key={r.name} room={r} entities={entities} />)}
-        </div>
-      </section>
-      <section className="agenda-section">
-        <h3>Termine</h3>
-        <Agenda limit={4} />
-      </section>
+      <CalendarWidget onOpen={openCalendar} />
+      <LightsWidget />
       <MediaPlayer compact />
     </div>
   )
 }
 
-function HomePage() {
+function HomePage({ openCalendar }: { openCalendar: () => void }) {
   const entities = useEntities()
-  if (PORTRAIT) return <HomePagePortrait />
+  if (PORTRAIT) return <HomePagePortrait openCalendar={openCalendar} />
   return (
     <div className="page home">
       <div className="col">
@@ -94,7 +85,7 @@ function HomePage() {
         </div>
       </div>
       <div className="col">
-        <Agenda />
+        <CalendarWidget onOpen={openCalendar} />
         <MediaPlayer />
       </div>
     </div>
@@ -114,7 +105,7 @@ export default function App() {
   const scale = useStageScale()
   const params = new URLSearchParams(location.search)
   const initial = (params.get('page') ?? (window as any).__PAGE__ ?? config.startPage) as Page
-  const [page, setPage] = useState<Page>(NAV.some((n) => n.id === initial) ? initial : config.startPage)
+  const [page, setPage] = useState<Page>((NAV.some((n) => n.id === initial) || initial === 'calendar') ? initial : config.startPage)
   const idle = useIdle(config.screensaverAfter)
   const [woke, setWoke] = useState(false)
   useEffect(() => { if (!idle) setWoke(false) }, [idle])
@@ -134,9 +125,9 @@ export default function App() {
           <ConnBadge />
         </nav>
         <main className="main">
-          {page === 'home' && <HomePage />}
+          {page === 'home' && <HomePage openCalendar={() => setPage('calendar')} />}
           {page === 'smarthome' && <SmarthomePage />}
-          {page === 'calendar' && <CalendarPage />}
+          {page === 'calendar' && <CalendarPage onBack={() => setPage('home')} />}
           {page === 'music' && <div className="page music"><MediaPlayer large /></div>}
         </main>
         {idle && !woke && <Screensaver onWake={() => { setWoke(true); setPage(config.startPage) }} />}

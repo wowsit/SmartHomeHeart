@@ -1,4 +1,4 @@
-import type { HaBackend, EntityMap, HaEntity, ConnState, ForecastDay, CalendarEvent } from './types'
+import type { NewCalendarEvent, HaBackend, EntityMap, HaEntity, ConnState, ForecastDay, CalendarEvent } from './types'
 
 function ent(entity_id: string, state: string, attributes: Record<string, any> = {}): HaEntity {
   return { entity_id, state, attributes, last_changed: new Date().toISOString() }
@@ -129,6 +129,12 @@ export class MockBackend implements HaBackend {
     })
   }
 
+  private extraEvents: CalendarEvent[] = []
+
+  async createCalendarEvent(entityId: string, ev: NewCalendarEvent): Promise<void> {
+    this.extraEvents.push({ ...ev, calendar: entityId })
+  }
+
   async getCalendarEvents(entityIds: string[], start: Date, end: Date): Promise<CalendarEvent[]> {
     const cal = entityIds[0] ?? 'calendar.meine_termine'
     const second = entityIds[1]
@@ -154,6 +160,7 @@ export class MockBackend implements HaBackend {
       { calendar: cal, summary: 'Kino', start: at(1, 20, 0), end: at(1, 22, 30), allDay: false },
     ]
     if (second) list.push({ calendar: second, summary: 'Sprint Review', start: at(t, 17, 0), end: at(t, 18, 0), allDay: false }, { calendar: second, summary: 'Kundentermin', start: at(t + 1, 10, 0), end: at(t + 1, 11, 30), allDay: false })
+    list.push(...this.extraEvents)
     const s = start.getTime(), e = end.getTime()
     return list.filter((ev) => new Date(ev.end).getTime() >= s && new Date(ev.start).getTime() <= e).sort((a, b) => a.start.localeCompare(b.start))
   }

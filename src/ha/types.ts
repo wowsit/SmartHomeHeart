@@ -22,6 +22,8 @@ export interface CalendarEvent {
   allDay: boolean
 }
 
+export type NewCalendarEvent = Omit<CalendarEvent, 'calendar'> & { description?: string }
+
 export type ConnState = 'connecting' | 'connected' | 'disconnected' | 'demo'
 
 export interface HaBackend {
@@ -31,4 +33,6 @@ export interface HaBackend {
   callService(domain: string, service: string, data?: Record<string, any>): Promise<void>
   getForecast(entityId: string): Promise<ForecastDay[]>
   getCalendarEvents(entityIds: string[], start: Date, end: Date): Promise<CalendarEvent[]>
+  /** Termin anlegen (HA-Service calendar.create_event) */
+  createCalendarEvent(entityId: string, ev: NewCalendarEvent): Promise<void>
 }
