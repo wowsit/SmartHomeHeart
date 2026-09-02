@@ -10,9 +10,9 @@ import { Icon } from './components/Icons'
 
 type Page = 'home' | 'smarthome' | 'calendar' | 'music'
 const NAV: { id: Page; label: string; icon: keyof typeof Icon }[] = [
+  { id: 'calendar', label: 'Kalender', icon: 'calendar' },
   { id: 'home', label: 'Übersicht', icon: 'home' },
   { id: 'smarthome', label: 'Zuhause', icon: 'grid' },
-  { id: 'calendar', label: 'Kalender', icon: 'calendar' },
   { id: 'music', label: 'Musik', icon: 'music' },
 ]
 
@@ -113,8 +113,8 @@ export default function App() {
   const ha = useMemo(createBackend, [])
   const scale = useStageScale()
   const params = new URLSearchParams(location.search)
-  const initial = (params.get('page') ?? (window as any).__PAGE__ ?? 'home') as Page
-  const [page, setPage] = useState<Page>(NAV.some((n) => n.id === initial) ? initial : 'home')
+  const initial = (params.get('page') ?? (window as any).__PAGE__ ?? config.startPage) as Page
+  const [page, setPage] = useState<Page>(NAV.some((n) => n.id === initial) ? initial : config.startPage)
   const idle = useIdle(config.screensaverAfter)
   const [woke, setWoke] = useState(false)
   useEffect(() => { if (!idle) setWoke(false) }, [idle])
@@ -139,7 +139,7 @@ export default function App() {
           {page === 'calendar' && <CalendarPage />}
           {page === 'music' && <div className="page music"><MediaPlayer large /></div>}
         </main>
-        {idle && !woke && <Screensaver onWake={() => setWoke(true)} />}
+        {idle && !woke && <Screensaver onWake={() => { setWoke(true); setPage(config.startPage) }} />}
       </div>
     </HaContext.Provider>
   )

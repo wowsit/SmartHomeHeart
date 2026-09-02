@@ -32,6 +32,25 @@ http:
 
 `src/config.ts`: Räume, Szenen, Wetter-, Kalender- und Media-Player-Entity. Unterstützt: `light.*` (mit Helligkeit), `switch.*`, `climate.*`, `scene.*`, `weather.*`, `calendar.*`, `media_player.*`.
 
+## Apple-Kalender (iCloud) anbinden
+
+Der Kalender läuft – wie alles – über Home Assistant. Für iCloud ist das die **CalDAV**-Integration:
+
+1. Auf <https://appleid.apple.com> → *Anmeldung und Sicherheit* → *App-spezifische Passwörter* → neues Passwort erzeugen (z. B. „Home Assistant“).
+2. In HA: *Einstellungen → Geräte & Dienste → Integration hinzufügen → CalDAV*
+   - URL: `https://caldav.icloud.com`
+   - Benutzername: deine Apple-ID (E-Mail), Passwort: das App-Passwort aus Schritt 1
+3. HA legt pro iCloud-Kalender eine Entity `calendar.<name>` an (*Einstellungen → Entitäten*, nach „calendar.“ filtern).
+4. Entity-ID in `src/config.ts` unter `calendars` eintragen, Farbe wählen (`green`, `blue`, `orange`, `purple`):
+   ```ts
+   calendars: [
+     { entity: 'calendar.max', name: 'Meine Termine', color: 'green' },
+     { entity: 'calendar.lena', name: 'Lena', color: 'blue' }, // zweiter Kalender später
+   ],
+   ```
+
+Das Dashboard liest die Termine über `GET /api/calendars/<entity>` (Monatsbereich, alle 5 Minuten aktualisiert) und startet direkt in der Monatsansicht (`config.startPage`).
+
 ## Auf dem Raspberry Pi
 
 ```bash

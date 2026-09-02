@@ -17,6 +17,8 @@ export const Icon = {
   thermo: I('M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0zM12 9v9'),
   play: I('M7 4v16l13-8z'),
   pause: I('M7 4h4v16H7zM13 4h4v16h-4z'),
+  chevL: I('M15 5l-7 7 7 7'),
+  chevR: I('M9 5l7 7-7 7'),
   prev: I('M19 20 9 12l10-8zM5 4v16'),
   next: I('M5 4l10 8-10 8zM19 4v16'),
   volume: I('M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13'),
