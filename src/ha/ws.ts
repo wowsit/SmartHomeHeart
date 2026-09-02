@@ -1,0 +1,88 @@
+import {
+  createConnection, createLongLivedTokenAuth, subscribeEntities, callService as haCallService,
+  type Connection, type HassEntities,
+} from 'home-assistant-js-websocket'
+import type { HaBackend, EntityMap, ConnState, ForecastDay, CalendarEvent } from './types'
+
+/** Echte Anbindung an Home Assistant per WebSocket (Live-Updates) + REST (Kalender). */
+export class HaWsBackend implements HaBackend {
+  private connPromise: Promise<Connection>
+  private connState: ConnState = 'connecting'
+  private connSubs = new Set<(s: ConnState) => void>()
+  private entitySubs = new Set<(e: EntityMap) => void>()
+  private latest: EntityMap = {}
+
+  private url: string
+  private token: string
+
+  constructor(url: string, token: string) {
+    this.url = url
+    this.token = token
+    this.connPromise = this.connect()
+  }
+
+  private setConn(s: ConnState) { this.connState = s; this.connSubs.forEach((cb) => cb(s)) }
+
+  private async connect(): Promise<Connection> {
+    const auth = createLongLivedTokenAuth(this.url, this.token)
+    // createConnection wirft bei Fehler; wir versuchen es mit Backoff erneut.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const conn = await createConnection({ auth })
+        this.setConn('connected')
+        conn.addEventListener('disconnected', () => this.setConn('disconnected'))
+        conn.addEventListener('ready', () => this.setConn('connected'))
+        subscribeEntities(conn, (ents: HassEntities) => {
+          this.latest = ents as unknown as EntityMap
+          this.entitySubs.forEach((cb) => cb(this.latest))
+        })
+        return conn
+      } catch (err) {
+        console.error('HA connect failed', err)
+        this.setConn('disconnected')
+        await new Promise((r) => setTimeout(r, Math.min(30000, 2000 * 2 ** attempt)))
+      }
+    }
+  }
+
+  subscribeEntities(cb: (entities: EntityMap) => void) {
+    this.entitySubs.add(cb)
+    if (Object.keys(this.latest).length) cb(this.latest)
+    return () => { this.entitySubs.delete(cb) }
+  }
+
+  subscribeConnection(cb: (s: ConnState) => void) {
+    this.connSubs.add(cb); cb(this.connState)
+    return () => { this.connSubs.delete(cb) }
+  }
+
+  async callService(domain: string, service: string, data: Record<string, any> = {}) {
+    const conn = await this.connPromise
+    const { entity_id, ...rest } = data
+    await haCallService(conn, domain, service, rest, entity_id ? { entity_id } : undefined)
+  }
+
+  async getForecast(entityId: string): Promise<ForecastDay[]> {
+    const conn = await this.connPromise
+    const res: any = await haCallService(conn, 'weather', 'get_forecasts', { type: 'daily' }, { entity_id: entityId }, true)
+    const list = res?.response?.[entityId]?.forecast ?? []
+    return list.map((f: any) => ({ datetime: f.datetime, condition: f.condition, temperature: f.temperature, templow: f.templow }))
+  }
+
+  async getCalendarEvents(entityIds: string[], start: Date, end: Date): Promise<CalendarEvent[]> {
+    const headers = { Authorization: `Bearer ${this.token}` }
+    const q = `?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`
+    const all = await Promise.all(entityIds.map(async (id) => {
+      try {
+        const r = await fetch(`${this.url}/api/calendars/${id}${q}`, { headers })
+        if (!r.ok) return []
+        const items: any[] = await r.json()
+        return items.map((ev) => {
+          const allDay = !!ev.start?.date
+          return { calendar: id, summary: ev.summary, allDay, start: allDay ? ev.start.date : ev.start.dateTime, end: allDay ? ev.end.date : ev.end.dateTime } as CalendarEvent
+        })
+      } catch (e) { console.error('calendar fetch failed', id, e); return [] }
+    }))
+    return all.flat().sort((a, b) => a.start.localeCompare(b.start))
+  }
+}

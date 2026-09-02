@@ -1,0 +1,25 @@
+# Auf dem Pi: cd deploy && docker compose up -d --build
+# Home Assistant läuft hier gleich mit; wenn du HA schon hast, den Block einfach entfernen.
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    network_mode: host
+    privileged: true
+    restart: unless-stopped
+    volumes:
+      - ./ha-config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        VITE_HA_URL: ${VITE_HA_URL:-http://localhost:8123}
+        VITE_HA_TOKEN: ${VITE_HA_TOKEN}
+    container_name: pi-dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:80"
