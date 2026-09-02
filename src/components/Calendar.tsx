@@ -29,25 +29,25 @@ function EventRow({ ev, now }: { ev: CalendarEvent; now: Date }) {
   const running = !ev.allDay && new Date(ev.start) <= now && new Date(ev.end) >= now
   return (
     <div className={`event ${past ? 'past' : ''} ${running ? 'running' : ''} cal-${config.calendars.indexOf(ev.calendar)}`}>
-      <div className="event-time">{ev.allDay ? 'Ganztags' : `${fmtTime(ev.start)} – ${fmtTime(ev.end)}`}</div>
+      <div className="event-time">{ev.allDay ? 'Ganztags' : fmtTime(ev.start)}</div>
       <div className="event-title">{ev.summary}</div>
     </div>
   )
 }
 
-/** Kompakte Liste: heute + morgen */
-export function Agenda() {
+/** Kompakte Liste: die nächsten Termine (heute + morgen), vergangene ausgeblendet */
+export function Agenda({ limit = 4 }: { limit?: number }) {
   const events = useCalendar(2)
   const now = new Date()
-  const today = dayKey(now); const tm = new Date(now); tm.setDate(tm.getDate() + 1); const tomorrow = dayKey(tm)
-  const groups: [string, CalendarEvent[]][] = [['Heute', events.filter((e) => evDay(e) === today)], ['Morgen', events.filter((e) => evDay(e) === tomorrow)]]
+  const today = dayKey(now)
+  const upcoming = events.filter((e) => e.allDay || new Date(e.end) >= now).slice(0, limit)
+  if (upcoming.length === 0) return <div className="card agenda"><div className="empty">Heute und morgen keine Termine</div></div>
   return (
     <div className="card agenda">
-      {groups.map(([label, list]) => (
-        <div key={label} className="agenda-group">
-          <h3>{label}</h3>
-          {list.length === 0 && <div className="muted small">Keine Termine</div>}
-          {list.map((ev, i) => <EventRow key={i} ev={ev} now={now} />)}
+      {upcoming.map((ev, i) => (
+        <div key={i} className="agenda-row">
+          <span className="agenda-day">{evDay(ev) === today ? 'Heute' : 'Morgen'}</span>
+          <EventRow ev={ev} now={now} />
         </div>
       ))}
     </div>
@@ -70,7 +70,7 @@ export function CalendarPage() {
               <div className="muted">{d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}</div>
             </div>
             <div className="day-events">
-              {list.length === 0 && <div className="muted small">Keine Termine</div>}
+              {list.length === 0 && <div className="empty">Frei</div>}
               {list.map((ev, j) => <EventRow key={j} ev={ev} now={now} />)}
             </div>
           </div>

@@ -5,7 +5,7 @@ import { Clock } from './components/Clock'
 import { Weather } from './components/Weather'
 import { Agenda, CalendarPage } from './components/Calendar'
 import { MediaPlayer } from './components/Media'
-import { RoomSummary, Scenes, SmarthomePage } from './components/Smarthome'
+import { RoomSummary, SmarthomePage } from './components/Smarthome'
 import { Icon } from './components/Icons'
 
 type Page = 'home' | 'smarthome' | 'calendar' | 'music'
@@ -43,12 +43,14 @@ function useIdle(seconds: number) {
   return idle
 }
 
+/** Verbindungsstatus: nur sichtbar, wenn etwas nicht stimmt (getrennt / Demo) – sonst kein Rauschen. */
 function ConnBadge() {
   const s = useConnState()
-  const label = { connected: 'Verbunden', connecting: 'Verbinde…', disconnected: 'Getrennt', demo: 'Demo-Modus' }[s]
+  if (s === 'connected') return null
+  const label = { connecting: 'Verbinde…', disconnected: 'Keine Verbindung zu Home Assistant', demo: 'Demo' }[s]
   return (
-    <div className={`conn conn-${s}`} title={label}>
-      {s === 'disconnected' ? <Icon.wifiOff size={24} /> : <Icon.wifi size={24} />}
+    <div className={`conn conn-${s}`}>
+      {s === 'disconnected' && <Icon.wifiOff size={20} />}
       <span>{label}</span>
     </div>
   )
@@ -58,18 +60,21 @@ function HomePagePortrait() {
   const entities = useEntities()
   return (
     <div className="page home-portrait">
-      <div className="row top">
-        <div className="card"><Clock /></div>
+      <header className="hero">
+        <Clock />
         <Weather compact />
-      </div>
-      <Scenes />
-      <div className="rooms">
-        {config.rooms.map((r) => <RoomSummary key={r.name} room={r} entities={entities} />)}
-      </div>
-      <div className="row bottom">
-        <Agenda />
-        <MediaPlayer />
-      </div>
+      </header>
+      <section>
+        <h3>Zuhause</h3>
+        <div className="rooms">
+          {config.rooms.map((r) => <RoomSummary key={r.name} room={r} entities={entities} />)}
+        </div>
+      </section>
+      <section className="agenda-section">
+        <h3>Termine</h3>
+        <Agenda limit={4} />
+      </section>
+      <MediaPlayer compact />
     </div>
   )
 }
@@ -80,11 +85,10 @@ function HomePage() {
   return (
     <div className="page home">
       <div className="col">
-        <div className="card"><Clock /></div>
+        <Clock />
         <Weather />
       </div>
       <div className="col wide">
-        <Scenes />
         <div className="rooms">
           {config.rooms.map((r) => <RoomSummary key={r.name} room={r} entities={entities} />)}
         </div>
@@ -108,11 +112,13 @@ function Screensaver({ onWake }: { onWake: () => void }) {
 export default function App() {
   const ha = useMemo(createBackend, [])
   const scale = useStageScale()
-  const [page, setPage] = useState<Page>('home')
+  const params = new URLSearchParams(location.search)
+  const initial = (params.get('page') ?? (window as any).__PAGE__ ?? 'home') as Page
+  const [page, setPage] = useState<Page>(NAV.some((n) => n.id === initial) ? initial : 'home')
   const idle = useIdle(config.screensaverAfter)
   const [woke, setWoke] = useState(false)
   useEffect(() => { if (!idle) setWoke(false) }, [idle])
-  const kiosk = new URLSearchParams(location.search).get('kiosk') === '1'
+  const kiosk = params.get('kiosk') === '1'
 
   return (
     <HaContext.Provider value={ha}>
@@ -121,7 +127,7 @@ export default function App() {
         <nav className="nav">
           {NAV.map((n) => { const I = Icon[n.icon]; return (
             <button key={n.id} className={`nav-btn ${page === n.id ? 'active' : ''}`} onClick={() => setPage(n.id)}>
-              <I size={34} /><span>{n.label}</span>
+              <I size={30} /><span>{n.label}</span>
             </button>
           ) })}
           <div className="nav-spacer" />
