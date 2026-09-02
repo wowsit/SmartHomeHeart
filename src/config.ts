@@ -8,9 +8,21 @@ export interface RoomConfig {
   entities: string[] // light.*, switch.*, climate.*
 }
 
+export type CalColor = 'green' | 'blue' | 'orange' | 'purple' | 'grey'
+export interface CalendarConfig {
+  entity: string // HA calendar entity, z. B. calendar.max (Google/CalDAV/… läuft über HA)
+  name: string
+  color: CalColor
+}
+
 export const config = {
   weather: 'weather.home',
-  calendars: ['calendar.familie', 'calendar.arbeit'],
+  /** Kalender-Entities aus Home Assistant. Reihenfolge = Reihenfolge in der Legende. */
+  calendars: [
+    { entity: 'calendar.meine_termine', name: 'Meine Termine', color: 'green' },
+    // Zweiter Kalender kommt später – einfach hier eintragen, z. B.:
+    // { entity: 'calendar.partnerin', name: 'Lena', color: 'blue' },
+  ] as CalendarConfig[],
   mediaPlayer: 'media_player.wohnzimmer',
   scenes: [
     { id: 'scene.gemuetlich', name: 'Gemütlich' },
@@ -29,5 +41,7 @@ export const config = {
   /** Sekunden ohne Berührung bis der Uhr-Bildschirmschoner erscheint (0 = aus) */
   /** Display-Ausrichtung: 'portrait' = 1080×1920 (Wandmontage hochkant), 'landscape' = 1920×1080 */
   orientation: 'portrait' as 'portrait' | 'landscape',
+  /** Seite nach dem Start / nach dem Bildschirmschoner */
+  startPage: 'calendar' as 'calendar' | 'home' | 'smarthome' | 'music',
   screensaverAfter: 300,
 }

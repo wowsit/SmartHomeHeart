@@ -6,7 +6,7 @@ import { useNow } from './Clock'
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
-export function MediaPlayer({ large = false }: { large?: boolean }) {
+export function MediaPlayer({ large = false, compact = false }: { large?: boolean; compact?: boolean }) {
   const ha = useHa()
   const m = useEntity(config.mediaPlayer)
   const now = useNow(1000)
@@ -14,7 +14,7 @@ export function MediaPlayer({ large = false }: { large?: boolean }) {
   const dragging = useRef(false)
   useEffect(() => { if (m && !dragging.current) setVol(Math.round((m.attributes.volume_level ?? 0) * 100)) }, [m])
 
-  if (!m) return <div className="card media"><div className="muted">Player nicht gefunden ({config.mediaPlayer})</div></div>
+  if (!m) return <div className="card media"><div className="empty">Player nicht gefunden ({config.mediaPlayer})</div></div>
   const a = m.attributes
   const playing = m.state === 'playing'
   const idle = ['off', 'idle', 'standby', 'unavailable'].includes(m.state)
@@ -25,13 +25,27 @@ export function MediaPlayer({ large = false }: { large?: boolean }) {
   const call = (service: string, data: Record<string, any> = {}) => ha.callService('media_player', service, { entity_id: m.entity_id, ...data })
   const art = a.entity_picture ? (a.entity_picture.startsWith('http') ? a.entity_picture : `${import.meta.env.VITE_HA_URL ?? ''}${a.entity_picture}`) : null
 
+  if (compact) {
+    return (
+      <div className="card media compact">
+        <div className="art">{art ? <img src={art} alt="" /> : <Icon.music size={32} />}</div>
+        <div className="media-info">
+          <div className="media-title">{idle ? 'Nichts spielt' : a.media_title ?? '–'}</div>
+          <div className="media-artist">{idle ? a.friendly_name : a.media_artist ?? a.media_album_name ?? ''}</div>
+        </div>
+        <button className="round" onClick={() => call('media_play_pause')} aria-label="Play/Pause">{playing ? <Icon.pause size={28} /> : <Icon.play size={28} />}</button>
+        <button className="round" onClick={() => call('media_next_track')} aria-label="Weiter"><Icon.next /></button>
+      </div>
+    )
+  }
+
   return (
     <div className={`card media ${large ? 'large' : ''}`}>
       <div className="media-top">
         <div className="art">{art ? <img src={art} alt="" /> : <Icon.music size={large ? 96 : 44} />}</div>
         <div className="media-info">
           <div className="media-title">{idle ? 'Nichts spielt' : a.media_title ?? '–'}</div>
-          <div className="media-artist muted">{idle ? a.friendly_name : a.media_artist ?? a.media_album_name ?? ''}</div>
+          <div className="media-artist">{idle ? a.friendly_name : a.media_artist ?? a.media_album_name ?? ''}</div>
           {large && !idle && <div className="muted small">{a.media_album_name}</div>}
         </div>
       </div>

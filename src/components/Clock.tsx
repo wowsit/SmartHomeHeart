@@ -6,12 +6,12 @@ export function useNow(intervalMs = 1000) {
   return now
 }
 
-export function Clock({ big = false }: { big?: boolean }) {
+export function Clock({ big = false, compact = false }: { big?: boolean; compact?: boolean }) {
   const now = useNow()
   const time = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
   const date = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })
   return (
-    <div className={`clock ${big ? 'clock-big' : ''}`}>
+    <div className={`clock ${big ? 'clock-big' : ''} ${compact ? 'clock-compact' : ''}`}>
       <div className="clock-time">{time}</div>
       <div className="clock-date">{date}</div>
     </div>

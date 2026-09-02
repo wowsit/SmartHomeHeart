@@ -129,18 +129,32 @@ export class MockBackend implements HaBackend {
     })
   }
 
-  async getCalendarEvents(): Promise<CalendarEvent[]> {
-    const d = (offsetDays: number, h: number, m = 0) => { const x = new Date(); x.setDate(x.getDate() + offsetDays); x.setHours(h, m, 0, 0); return x }
-    const iso = (x: Date) => x.toISOString()
-    const day = (offset: number) => { const x = new Date(); x.setDate(x.getDate() + offset); return x.toISOString().slice(0, 10) }
-    return [
-      { calendar: 'calendar.familie', summary: 'Zahnarzt Lena', start: iso(d(0, 15, 30)), end: iso(d(0, 16, 15)), allDay: false },
-      { calendar: 'calendar.arbeit', summary: 'Sprint Review', start: iso(d(0, 17, 0)), end: iso(d(0, 18, 0)), allDay: false },
-      { calendar: 'calendar.familie', summary: 'Abendessen bei Oma', start: iso(d(0, 19, 0)), end: iso(d(0, 21, 0)), allDay: false },
-      { calendar: 'calendar.familie', summary: 'Müllabfuhr (Gelber Sack)', start: day(1), end: day(2), allDay: true },
-      { calendar: 'calendar.arbeit', summary: 'Kundentermin AC3', start: iso(d(1, 10, 0)), end: iso(d(1, 11, 30)), allDay: false },
-      { calendar: 'calendar.familie', summary: 'Fußballtraining', start: iso(d(2, 17, 30)), end: iso(d(2, 19, 0)), allDay: false },
-      { calendar: 'calendar.familie', summary: 'Geburtstag Max', start: day(4), end: day(5), allDay: true },
+  async getCalendarEvents(entityIds: string[], start: Date, end: Date): Promise<CalendarEvent[]> {
+    const cal = entityIds[0] ?? 'calendar.meine_termine'
+    const second = entityIds[1]
+    const now = new Date()
+    const at = (day: number, h: number, m = 0) => { const x = new Date(now.getFullYear(), now.getMonth(), day, h, m); return x.toISOString() }
+    const allDay = (day: number, len = 1) => {
+      const a = new Date(now.getFullYear(), now.getMonth(), day); const b = new Date(a); b.setDate(b.getDate() + len)
+      const f = (x: Date) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
+      return [f(a), f(b)] as const
+    }
+    const t = now.getDate()
+    const list: CalendarEvent[] = [
+      { calendar: cal, summary: 'Zahnarzt', start: at(t, 15, 30), end: at(t, 16, 15), allDay: false },
+      { calendar: cal, summary: 'Abendessen bei Oma', start: at(t, 19, 0), end: at(t, 21, 0), allDay: false },
+      { calendar: cal, summary: 'Müllabfuhr (Gelber Sack)', start: allDay(t + 1)[0], end: allDay(t + 1)[1], allDay: true },
+      { calendar: cal, summary: 'Fußballtraining', start: at(t + 2, 17, 30), end: at(t + 2, 19, 0), allDay: false },
+      { calendar: cal, summary: 'Geburtstag Max', start: allDay(t + 4)[0], end: allDay(t + 4)[1], allDay: true },
+      { calendar: cal, summary: 'Fußballtraining', start: at(t + 9, 17, 30), end: at(t + 9, 19, 0), allDay: false },
+      { calendar: cal, summary: 'Autowerkstatt', start: at(t + 6, 8, 0), end: at(t + 6, 9, 0), allDay: false },
+      { calendar: cal, summary: 'Elternabend', start: at(t + 12, 19, 0), end: at(t + 12, 20, 30), allDay: false },
+      { calendar: cal, summary: 'Wochenende Ostsee', start: allDay(t + 16, 3)[0], end: allDay(t + 16, 3)[1], allDay: true },
+      { calendar: cal, summary: 'Friseur', start: at(3, 10, 0), end: at(3, 11, 0), allDay: false },
+      { calendar: cal, summary: 'Kino', start: at(1, 20, 0), end: at(1, 22, 30), allDay: false },
     ]
+    if (second) list.push({ calendar: second, summary: 'Sprint Review', start: at(t, 17, 0), end: at(t, 18, 0), allDay: false }, { calendar: second, summary: 'Kundentermin', start: at(t + 1, 10, 0), end: at(t + 1, 11, 30), allDay: false })
+    const s = start.getTime(), e = end.getTime()
+    return list.filter((ev) => new Date(ev.end).getTime() >= s && new Date(ev.start).getTime() <= e).sort((a, b) => a.start.localeCompare(b.start))
   }
 }

@@ -25,7 +25,7 @@ export function ToggleTile({ e, showSlider = false }: { e: HaEntity; showSlider?
   return (
     <div className={`tile ${on ? 'on' : ''} ${pending ? 'pending' : ''}`}>
       <button className="tile-main" onClick={toggle} aria-pressed={on}>
-        <span className="tile-icon">{isLight ? <Icon.bulb size={32} /> : <Icon.power size={32} />}</span>
+        <span className="tile-icon">{isLight ? <Icon.bulb size={28} /> : <Icon.power size={28} />}</span>
         <span className="tile-name">{e.attributes.friendly_name ?? e.entity_id}</span>
         <span className="tile-state">{on ? (pct != null ? `${pct} %` : 'An') : 'Aus'}</span>
       </button>
@@ -73,9 +73,9 @@ export function ClimateTile({ e }: { e: HaEntity }) {
   return (
     <div className={`tile climate ${heating ? 'on warm' : ''}`}>
       <div className="tile-main static">
-        <span className="tile-icon"><Icon.thermo size={32} /></span>
+        <span className="tile-icon"><Icon.thermo size={28} /></span>
         <span className="tile-name">{e.attributes.friendly_name ?? 'Heizung'}</span>
-        <span className="tile-state">Ist {Number(e.attributes.current_temperature).toFixed(1)}° · {heating ? 'heizt' : 'bereit'}</span>
+        <span className="tile-state">{Number(e.attributes.current_temperature).toFixed(1)}° {heating ? '· heizt' : ''}</span>
       </div>
       <div className="climate-ctrl">
         <button className="round" onClick={() => change(-step)} aria-label="kälter"><Icon.minus /></button>
@@ -102,14 +102,14 @@ export function Scenes() {
     <div className="scenes">
       {config.scenes.map((s) => (
         <button key={s.id} className={`scene ${active === s.id ? 'active' : ''}`} onClick={() => run(s.id)}>
-          <Icon.scene size={26} /> {s.name}
+          {s.name}
         </button>
       ))}
     </div>
   )
 }
 
-/** Kompakte Raumkarte für die Übersicht: zeigt an/aus-Zähler, tippen schaltet alle Lichter im Raum */
+/** Raumkachel für die Übersicht: Name, Zustand in einem Satz, Temperatur. Tippen schaltet alle Lichter im Raum. */
 export function RoomSummary({ room, entities }: { room: RoomConfig; entities: EntityMap }) {
   const ha = useHa()
   const lights = room.entities.filter((id) => domainOf(id) !== 'climate').map((id) => entities[id]).filter(Boolean)
@@ -121,19 +121,13 @@ export function RoomSummary({ room, entities }: { room: RoomConfig; entities: En
     if (!ids.length) return
     ha.callService('homeassistant', anyOn ? 'turn_off' : 'turn_on', { entity_id: ids })
   }
+  const status = !anyOn ? 'Aus' : onCount === lights.length ? (lights.length === 1 ? 'An' : 'Alles an') : `${onCount} von ${lights.length} an`
   return (
     <button className={`room ${anyOn ? 'on' : ''}`} onClick={toggleAll}>
-      <div className="room-head">
-        <span className="room-name">{room.name}</span>
-        <Icon.bulb size={26} />
-      </div>
-      <div className="room-list">
-        {lights.map((e) => <span key={e.entity_id} className={`dot-item ${e.state === 'on' ? 'on' : ''}`}><i /><span>{e.attributes.friendly_name ?? e.entity_id}</span></span>)}
-      </div>
-      <div className="room-foot">
-        <span>{onCount}/{lights.length} an</span>
-        {climate && <span className="muted">{Number(climate.attributes.current_temperature).toFixed(1)}°</span>}
-      </div>
+      <span className="room-icon"><Icon.bulb size={28} /></span>
+      <span className="room-name">{room.name}</span>
+      <span className="room-status">{status}</span>
+      {climate && <span className="room-temp">{Number(climate.attributes.current_temperature).toFixed(1)}°</span>}
     </button>
   )
 }
@@ -142,7 +136,6 @@ export function SmarthomePage() {
   const entities = useEntities()
   return (
     <div className="page smarthome">
-      <Scenes />
       <div className="rooms-grid">
         {config.rooms.map((room) => (
           <section key={room.name} className="card room-section">
@@ -155,6 +148,10 @@ export function SmarthomePage() {
           </section>
         ))}
       </div>
+      <section>
+        <h3>Szenen</h3>
+        <Scenes />
+      </section>
     </div>
   )
 }
