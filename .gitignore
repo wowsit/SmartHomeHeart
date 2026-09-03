@@ -3,3 +3,4 @@ dist
 dist-single
 .env
 deploy/ha-config
+assistant/*/.env
