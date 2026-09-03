@@ -31,6 +31,8 @@ http:
 > **https / Mikrofon:** Der Sprachassistent braucht einen Secure Context. Der nginx auf dem Pi liefert das Dashboard deshalb zusätzlich unter `https://<pi>:8443` aus (selbstsigniertes Zertifikat aus `deploy/tls/make-cert.sh`, Browserwarnung einmal akzeptieren) und reicht `/api/` an Home Assistant weiter.
 
 
+**Ist-Stand des Pi** (Home Assistant, Container, Entitäten, Pipelines, Zertifikat …): [`docs/IST-STAND.md`](docs/IST-STAND.md) – wird bei jedem Deploy automatisch per `deploy/export-state.sh` neu erzeugt. Architektur/Aufbau: [`docs/AUFBAU.md`](docs/AUFBAU.md).
+
 `?mock=1` an die URL hängen erzwingt den Demo-Modus, `?kiosk=1` blendet den Mauszeiger aus.
 
 ## Entities anpassen

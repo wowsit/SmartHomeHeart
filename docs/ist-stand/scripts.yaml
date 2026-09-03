@@ -1,0 +1,156 @@
+kalendereintrag_erstellen:
+  alias: Kalendereintrag erstellen
+  description: Erstellt einen neuen Termin im Kalender des Nutzers. Nutze dieses Werkzeug,
+    wenn der Nutzer einen Termin, eine Erinnerung mit Uhrzeit oder einen Kalendereintrag
+    anlegen möchte. Zeiten immer als lokale Zeit im Format YYYY-MM-DD HH:MM:SS angeben.
+    Wenn kein Ende genannt wird, 1 Stunde nach Start ansetzen.
+  mode: parallel
+  icon: mdi:calendar-plus
+  fields:
+    titel:
+      name: Titel
+      description: Titel des Termins, z.B. 'Zahnarzt'
+      required: true
+      selector:
+        text: {}
+    start:
+      name: Start
+      description: Startzeit, Format YYYY-MM-DD HH:MM:SS (lokale Zeit)
+      required: true
+      selector:
+        datetime: {}
+    ende:
+      name: Ende
+      description: 'Endzeit, Format YYYY-MM-DD HH:MM:SS (lokale Zeit). Standard: 1
+        Stunde nach Start.'
+      required: true
+      selector:
+        datetime: {}
+    kalender:
+      name: Kalender
+      description: 'Zielkalender: ''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      required: false
+      default: hjem
+      selector:
+        select:
+          options:
+          - hjem
+          - arbeid
+    beschreibung:
+      name: Beschreibung
+      description: Optionale Notiz zum Termin
+      required: false
+      selector:
+        text: {}
+  sequence:
+  - action: calendar.create_event
+    target:
+      entity_id: calendar.{{ kalender | default('hjem') }}
+    data:
+      summary: '{{ titel }}'
+      start_date_time: '{{ start }}'
+      end_date_time: '{{ ende }}'
+      description: '{{ beschreibung | default('''') }}'
+termin_loeschen:
+  alias: Termin löschen
+  description: Löscht einen bestehenden Termin aus dem Kalender des Nutzers. Nutze
+    dieses Werkzeug, wenn der Nutzer einen Termin absagen, entfernen oder löschen
+    möchte. Du brauchst den Titel (oder einen eindeutigen Teil davon) und den Tag
+    des Termins. Wenn der Tag unbekannt ist, finde ihn zuerst über die Kalender-Abfrage
+    heraus.
+  mode: parallel
+  icon: mdi:calendar-remove
+  fields:
+    titel:
+      name: Titel
+      description: Titel oder eindeutiger Teil des Titels, z.B. 'Zahnarzt'
+      required: true
+      selector:
+        text: {}
+    datum:
+      name: Datum
+      description: Tag des Termins, Format YYYY-MM-DD
+      required: true
+      selector:
+        date: {}
+    kalender:
+      name: Kalender
+      description: '''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      required: false
+      default: hjem
+      selector:
+        select:
+          options:
+          - hjem
+          - arbeid
+  sequence:
+  - action: rest_command.calhelper_delete
+    data:
+      titel: '{{ titel }}'
+      datum: '{{ datum }}'
+      kalender: '{{ kalender | default(''hjem'') }}'
+    response_variable: r
+  - stop: done
+    response_variable: r
+termin_verschieben:
+  alias: Termin verschieben
+  description: Verschiebt einen bestehenden Termin auf eine neue Zeit und/oder benennt
+    ihn um. Nutze dieses Werkzeug, wenn der Nutzer einen Termin verlegen, verschieben,
+    umbenennen oder die Uhrzeit ändern möchte. Dauer bleibt gleich, wenn kein neues
+    Ende angegeben ist.
+  mode: parallel
+  icon: mdi:calendar-edit
+  fields:
+    titel:
+      name: Titel
+      description: Titel oder eindeutiger Teil des Titels des bestehenden Termins
+      required: true
+      selector:
+        text: {}
+    datum:
+      name: Datum
+      description: Bisheriger Tag des Termins, Format YYYY-MM-DD
+      required: true
+      selector:
+        date: {}
+    neuer_start:
+      name: Neuer Start
+      description: Neue Startzeit, Format YYYY-MM-DD HH:MM:SS (lokale Zeit)
+      required: true
+      selector:
+        datetime: {}
+    neues_ende:
+      name: Neues Ende
+      description: 'Optional: neue Endzeit, Format YYYY-MM-DD HH:MM:SS. Leer lassen
+        = Dauer bleibt gleich'
+      required: false
+      selector:
+        datetime: {}
+    neuer_titel:
+      name: Neuer Titel
+      description: 'Optional: neuer Titel, wenn der Termin umbenannt werden soll'
+      required: false
+      selector:
+        text: {}
+    kalender:
+      name: Kalender
+      description: '''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      required: false
+      default: hjem
+      selector:
+        select:
+          options:
+          - hjem
+          - arbeid
+  sequence:
+  - action: rest_command.calhelper_move
+    data:
+      titel: '{{ titel }}'
+      datum: '{{ datum }}'
+      neuer_start: '{{ neuer_start }}'
+      neues_ende: '{{ neues_ende | default('''') }}'
+      neuer_titel: '{{ neuer_titel | default('''') }}'
+      kalender: '{{ kalender | default(''hjem'') }}'
+    response_variable: r
+  - stop: done
+    response_variable: r

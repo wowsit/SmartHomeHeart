@@ -1,0 +1,24 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Kalender-Helfer (calhelper container, 127.0.0.1:10400) – delete/move für CalDAV, HA kann nativ nur create
+rest_command:
+  calhelper_delete:
+    url: http://127.0.0.1:10400/delete
+    method: post
+    content_type: application/json
+    payload: '{"calendar": "{{ kalender }}", "title": "{{ titel }}", "date": "{{ datum }}"}'
+  calhelper_move:
+    url: http://127.0.0.1:10400/move
+    method: post
+    content_type: application/json
+    payload: '{"calendar": "{{ kalender }}", "title": "{{ titel }}", "date": "{{ datum }}", "new_start": "{{ neuer_start }}"{% if neues_ende %}, "new_end": "{{ neues_ende }}"{% endif %}{% if neuer_titel %}, "new_title": "{{ neuer_titel }}"{% endif %}}'

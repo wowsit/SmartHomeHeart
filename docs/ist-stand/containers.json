@@ -1,0 +1,171 @@
+[
+  {
+    "name": "pi-dashboard",
+    "image": "nginx:alpine",
+    "status": "running",
+    "network": "bridge",
+    "restart": "unless-stopped",
+    "ports": {
+      "443/tcp": [
+        {
+          "HostIp": "",
+          "HostPort": "8443"
+        }
+      ],
+      "80/tcp": [
+        {
+          "HostIp": "",
+          "HostPort": "8080"
+        }
+      ]
+    },
+    "binds": [
+      "/home/wowsit/dashboard/nginx.conf:/etc/nginx/conf.d/default.conf:ro",
+      "/home/wowsit/dashboard/tls:/etc/nginx/tls:ro",
+      "/home/wowsit/dashboard/dist:/usr/share/nginx/html:ro"
+    ],
+    "cmd": [
+      "nginx",
+      "-g",
+      "daemon off;"
+    ],
+    "env_keys": [
+      "ACME_VERSION",
+      "DYNPKG_RELEASE",
+      "NGINX_VERSION",
+      "NJS_RELEASE",
+      "NJS_VERSION",
+      "PKG_RELEASE"
+    ]
+  },
+  {
+    "name": "groq_stt",
+    "image": "groq_stt",
+    "status": "running",
+    "network": "bridge",
+    "restart": "unless-stopped",
+    "ports": {
+      "10301/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "10301"
+        }
+      ]
+    },
+    "binds": null,
+    "cmd": [
+      "python",
+      "-u",
+      "/app/groq_stt.py"
+    ],
+    "env_keys": [
+      "DEBUG_SAVE",
+      "GROQ_API_KEY",
+      "STT_LANGUAGE",
+      "STT_PROMPT"
+    ]
+  },
+  {
+    "name": "openwakeword",
+    "image": "rhasspy/wyoming-openwakeword",
+    "status": "running",
+    "network": "bridge",
+    "restart": "unless-stopped",
+    "ports": {
+      "10400/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "10500"
+        }
+      ]
+    },
+    "binds": [
+      "/home/wowsit/openwakeword/custom:/custom"
+    ],
+    "cmd": [
+      "--preload-model",
+      "ok_nabu",
+      "--custom-model-dir",
+      "/custom"
+    ],
+    "env_keys": []
+  },
+  {
+    "name": "calhelper",
+    "image": "calhelper",
+    "status": "running",
+    "network": "bridge",
+    "restart": "unless-stopped",
+    "ports": {
+      "10400/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "10400"
+        }
+      ]
+    },
+    "binds": null,
+    "cmd": [
+      "python",
+      "-u",
+      "/app/calhelper.py"
+    ],
+    "env_keys": [
+      "CALDAV_PASS",
+      "CALDAV_URL",
+      "CALDAV_USER",
+      "TZ"
+    ]
+  },
+  {
+    "name": "whisper",
+    "image": "rhasspy/wyoming-whisper",
+    "status": "exited",
+    "network": "bridge",
+    "restart": "no",
+    "ports": {
+      "10300/tcp": [
+        {
+          "HostIp": "",
+          "HostPort": "10300"
+        }
+      ]
+    },
+    "binds": [
+      "/home/wowsit/whisper-data:/data"
+    ],
+    "cmd": [
+      "--model",
+      "tiny-int8",
+      "--language",
+      "de",
+      "--beam-size",
+      "1"
+    ],
+    "env_keys": []
+  },
+  {
+    "name": "homeassistant",
+    "image": "ghcr.io/home-assistant/home-assistant:stable",
+    "status": "running",
+    "network": "host",
+    "restart": "unless-stopped",
+    "ports": {},
+    "binds": [
+      "/home/wowsit/homeassistant:/config"
+    ],
+    "cmd": null,
+    "env_keys": [
+      "PIP_EXTRA_INDEX_URL",
+      "S6_BEHAVIOUR_IF_STAGE2_FAILS",
+      "S6_CMD_WAIT_FOR_SERVICES",
+      "S6_CMD_WAIT_FOR_SERVICES_MAXTIME",
+      "S6_SERVICES_GRACETIME",
+      "S6_SERVICES_READYTIME",
+      "TZ",
+      "UV_EXTRA_INDEX_URL",
+      "UV_NO_CACHE",
+      "UV_SYSTEM_PYTHON"
+    ]
+  }
+]

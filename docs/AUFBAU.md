@@ -205,12 +205,17 @@ Der Build entsteht **nicht auf dem Pi** (zu langsam, kein Repo-Klon dort), sonde
 ```bash
 # am Laptop / bei Viktor, im Repo auf main
 VITE_HA_URL=auto VITE_HA_TOKEN=<Long-Lived-Token> npm run build
+echo "$(git rev-parse --short HEAD) ($(git branch --show-current)) deployed $(date '+%F %H:%M %Z')" > dist/VERSION
 tar czf dist.tgz -C dist . && scp dist.tgz wowsit@homehole:/tmp/
 # auf dem Pi
 cd ~/dashboard && cp -a dist dist.bak-$(date +%Y%m%d-%H%M%S) \
   && rm -rf dist/* && tar xzf /tmp/dist.tgz -C dist && rm /tmp/dist.tgz \
   && docker exec pi-dashboard nginx -s reload
+# zurück am Laptop / bei Viktor: Ist-Stand exportieren und mit einchecken
+deploy/export-state.sh && git add docs && git commit -m "Deploy + Ist-Stand" && git push
 ```
+
+`dist/VERSION` sagt später, welcher Commit auf dem Pi läuft (steht in `docs/IST-STAND.md`). `docs/IST-STAND.md` + `docs/ist-stand/` sind **generiert** (`deploy/export-state.py` läuft per SSH auf dem Pi, Geheimnisse maskiert) und werden bei jedem Deploy neu geschrieben – dort steht der tatsächliche Zustand von HA (Integrationen, Pipelines, Entitäten, Skripte, CORS), Containern, Zertifikat und Netz.
 
 Danach im Browser **hart neu laden** (Cmd+Shift+R), sonst bleibt das alte JS im Cache. Wichtig: `VITE_*` werden **beim Build** eingebrannt – bei neuem Token oder anderer URL neu bauen. `VITE_HA_URL=auto` ist Pflicht, damit derselbe Build vom Kiosk (`localhost`) und vom Mac (`192.168.178.151`) funktioniert.
 
