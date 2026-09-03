@@ -4,3 +4,4 @@ dist-single
 .env
 deploy/ha-config
 assistant/*/.env
+__pycache__/
