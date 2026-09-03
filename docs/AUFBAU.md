@@ -139,7 +139,12 @@ http:
   cors_allowed_origins:
     - http://localhost:5173
     - http://localhost:8080
+    - http://192.168.178.151:8080   # Pi-IP im LAN, damit das Dashboard auch vom Mac/Handy im Browser geht
 ```
+
+**Achtung (HA ≥ 2026):** Sobald die `http:`-Einstellungen einmal in die UI migriert wurden (`.storage/http` mit `yaml_migration_done: true`), wird der YAML-Block **ignoriert**. Dann die Origins in HA unter *Einstellungen → System → Netzwerk* (HTTP-Einstellungen) eintragen oder in `.storage/http` → `data.stable.cors_allowed_origins` ergänzen und HA neu starten.
+
+`VITE_HA_URL=auto` nimmt automatisch den Host, von dem das Dashboard geladen wurde (Port 8123) – ein Build für Kiosk (`localhost`) und Browser im LAN (`192.168.178.151`).
 
 URL-Parameter: `?mock=1` Demo erzwingen · `?kiosk=1` Mauszeiger aus · `?page=calendar` Startseite wählen.
 
