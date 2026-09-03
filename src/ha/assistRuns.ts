@@ -42,6 +42,7 @@ export function watchAssistRuns(conn: Connection, cb: (s: AssistState) => void, 
       switch (e.type) {
         case 'stt-start': sttStarted = true; break
         case 'stt-end': sttEnded = true; heard = d.stt_output?.text || undefined; break
+        case 'intent-start': sttStarted = true; sttEnded = true; heard = heard ?? (d.intent_input || undefined); break // auch Text-Eingaben (HA-App-Chat)
         case 'intent-progress': { const c = d.chat_log_delta?.content; if (typeof c === 'string') answer += c; break }
         case 'intent-end': intentEnded = true; final = d.intent_output?.response?.speech?.plain?.speech; break
         case 'tts-end': ttsEnded = true; break
@@ -49,7 +50,7 @@ export function watchAssistRuns(conn: Connection, cb: (s: AssistState) => void, 
         case 'run-end': ended = true; break
       }
     }
-    if (!sttStarted) return { state: null, ended }              // Wake-Word-Lauf ohne Sprache
+    if (!sttStarted) return { state: null, ended }              // Wake-Word-Lauf ohne Sprache/Text
     if (error && !heard) return { state: { phase: 'error', error, source: 'remote' }, ended }
     if (!sttEnded) return { state: { phase: 'listening', source: 'remote' }, ended }
     const text = final ?? answer

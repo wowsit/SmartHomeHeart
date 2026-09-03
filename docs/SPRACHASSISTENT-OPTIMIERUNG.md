@@ -105,3 +105,13 @@ Kalenderabfrage 4,3 s (Tool-Aufruf + Antwort). Vorher lagen allein Thinking + la
 - **Ofen-Alias** „Backofen“, damit „Backofen aus“ lokal trifft.
 - Groq-Whisper-Alternative bei Latenzproblemen: `distil-whisper` gibt es nur für Englisch; für Deutsch bleibt
   `whisper-large-v3-turbo` die schnellste brauchbare Option.
+
+## Live-Untertitel auf dem Dashboard (2026-09-03 19:00)
+
+Wunsch: Sprachbefehl mittig und sehr groß mitlesen. Umgesetzt in `src/components/Assistant.tsx` (`Captions`) + `src/ha/assistRuns.ts`:
+
+- Gehörter Satz (grau, 64 px) und Antwort (fett, bis 104 px; Schriftgröße schrumpft mit Textlänge) in der Bildschirmmitte, Hintergrund abgedunkelt.
+- Antwort wird **gestreamt** (`intent-progress` → `chat_log_delta.content`), also Wort für Wort mit Cursor, bevor TTS fertig ist.
+- Befehle vom **Handy** sieht das Dashboard über `assist_pipeline/pipeline_debug/list|get` (HA hält die letzten 10 Läufe pro Pipeline im Speicher, wachsend während des Laufs). Latenz ≤ 1 s bis zum ersten Untertitel. Läufe des eigenen Mikros werden nicht doppelt gezeigt.
+- Haltedauer nach Ende: 3 s + 70 ms/Zeichen (max 12 s); „Nichts verstanden.“ 2 s.
+- Getestet mit echtem Lauf: 1,6 s nach Start stand die Frage, 4,8 s die komplette Antwort.

@@ -51,7 +51,7 @@ export class AssistClient implements AssistLike {
 
   subscribe(cb: Listener) { this.listeners.add(cb); cb(this.state); return () => { this.listeners.delete(cb) } }
   /** Läuft gerade ein eigener Sprachbefehl (Zuhören/Denken/Sprechen)? */
-  get active() { return this.state.phase !== 'idle' }
+  get active() { return this.state.phase !== 'idle' && this.state.phase !== 'error' }
   private set(patch: Partial<AssistState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach((l) => l(this.state)) }
 
   /** Mikro öffnen und Dauerschleife mit Wake Word starten. Muss aus einer Nutzeraktion oder auf Kiosk (Autoplay erlaubt) kommen. */

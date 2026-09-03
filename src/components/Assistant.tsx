@@ -29,9 +29,10 @@ export function Assistant() {
   useEffect(() => ha.subscribeAssistRuns(setRemote), [ha])
 
   // Eigener Lauf hat Vorrang; sonst das, was ein anderes Gerät gerade macht.
-  const st = own.phase !== 'idle' ? own : remote
+  // Ein eigener Fehler (z. B. kein Mikrofon im Browser) bleibt klein am Button – er darf weder den Bildschirm dimmen noch Handy-Befehle verdecken.
+  const ownActive = own.phase !== 'idle' && own.phase !== 'error'
+  const st = ownActive ? own : remote
   const active = st.phase !== 'idle'
-  const ownActive = own.phase !== 'idle'
 
   const onTap = async () => {
     if (!assist) return
@@ -45,6 +46,7 @@ export function Assistant() {
       <div className={`assist-dim ${active ? 'on' : ''}`} onPointerDown={() => { if (ownActive) assist?.stop() }} />
       {active && <Captions st={st} />}
       <div className={`assist ${ownActive ? 'on' : ''} ${own.phase}`}>
+        {own.phase === 'error' && !active && <div className="assist-error">{own.error}</div>}
         <button className={`assist-btn ${armed ? 'armed' : ''}`} onClick={onTap} aria-label="Sprachassistent">
           {ownActive ? <Icon.close size={34} /> : <Icon.mic size={34} />}
         </button>
