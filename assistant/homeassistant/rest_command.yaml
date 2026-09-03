@@ -1,0 +1,12 @@
+# In configuration.yaml einfügen (Neustart von HA nötig, wenn rest_command vorher nicht existierte).
+rest_command:
+  calhelper_delete:
+    url: http://127.0.0.1:10400/delete
+    method: post
+    content_type: application/json
+    payload: '{"calendar": "{{ kalender }}", "title": "{{ titel }}", "date": "{{ datum }}"}'
+  calhelper_move:
+    url: http://127.0.0.1:10400/move
+    method: post
+    content_type: application/json
+    payload: '{"calendar": "{{ kalender }}", "title": "{{ titel }}", "date": "{{ datum }}", "new_start": "{{ neuer_start }}"{% if neues_ende %}, "new_end": "{{ neues_ende }}"{% endif %}{% if neuer_titel %}, "new_title": "{{ neuer_titel }}"{% endif %}}'

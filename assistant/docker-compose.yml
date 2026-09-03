@@ -1,0 +1,16 @@
+# Sprachassistent-Sidecars für Home Assistant (laufen auf dem Pi neben dem HA-Container).
+# Start: cd assistant && docker compose up -d --build
+services:
+  calhelper:
+    build: ./calhelper
+    container_name: calhelper
+    restart: unless-stopped
+    env_file: ./calhelper/.env
+    ports: ["127.0.0.1:10400:10400"]
+
+  groq_stt:
+    build: ./groq_stt
+    container_name: groq_stt
+    restart: unless-stopped
+    env_file: ./groq_stt/.env
+    ports: ["127.0.0.1:10301:10301"]
