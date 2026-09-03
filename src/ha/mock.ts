@@ -132,6 +132,8 @@ export class MockBackend implements HaBackend {
 
   private extraEvents: CalendarEvent[] = []
 
+  subscribeCalendarChanges(_cb: () => void) { return () => {} }
+
   async createCalendarEvent(entityId: string, ev: NewCalendarEvent): Promise<void> {
     this.extraEvents.push({ ...ev, calendar: entityId })
   }

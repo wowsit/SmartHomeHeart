@@ -96,6 +96,28 @@ export class HaWsBackend implements HaBackend {
     await haCallService(conn, 'calendar', 'create_event', data, { entity_id: entityId })
   }
 
+  /** Kalender-Änderungen live: state_changed der Kalender-Entities (nächster Termin ändert sich) + jeder calendar.*-Service-Aufruf
+   *  (Sprachassistent / Dashboard legt Termin an) + Event `smarthomeheart_calendar_refreshed` der HA-Automation nach dem iCloud-Abgleich. */
+  subscribeCalendarChanges(cb: () => void) {
+    let alive = true
+    const unsubs: Array<() => void> = []
+    const calIds = new Set(config.calendars.map((c) => c.entity))
+    this.connPromise.then(async (conn) => {
+      if (!alive) return
+      const onEvent = (ev: any) => {
+        const d = ev?.data ?? {}
+        if (ev?.event_type === 'state_changed' && !calIds.has(d.entity_id)) return
+        if (ev?.event_type === 'call_service' && d.domain !== 'calendar') return
+        cb()
+      }
+      for (const type of ['state_changed', 'call_service', 'smarthomeheart_calendar_refreshed']) {
+        unsubs.push(await conn.subscribeEvents(onEvent, type))
+      }
+      if (!alive) unsubs.forEach((u) => u())
+    }).catch(console.error)
+    return () => { alive = false; unsubs.forEach((u) => u()) }
+  }
+
   private assist?: AssistClient
   async getAssist(): Promise<AssistLike | null> {
     const conn = await this.connPromise

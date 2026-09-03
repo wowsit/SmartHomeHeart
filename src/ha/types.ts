@@ -47,6 +47,8 @@ export interface HaBackend {
   getCalendarEvents(entityIds: string[], start: Date, end: Date): Promise<CalendarEvent[]>
   /** Termin anlegen (HA-Service calendar.create_event) */
   createCalendarEvent(entityId: string, ev: NewCalendarEvent): Promise<void>
+  /** Feuert, wenn sich in HA etwas an Kalendern getan hat (Entity-Status, calendar.*-Service, Refresh-Automation). Gibt unsubscribe zurück. */
+  subscribeCalendarChanges(cb: () => void): () => void
   /** Sprachassistent; null wenn nicht verfügbar */
   getAssist(): Promise<AssistLike | null>
 }
