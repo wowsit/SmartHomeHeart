@@ -5,6 +5,7 @@ const base = (size = 28, props: P) => ({
   width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
   strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, ...props,
 })
+// oxlint-disable-next-line react/only-export-components -- `Icon` ist eine Map aus Komponenten, die Regel erkennt das Objekt nicht als Komponente
 const I = (d: string) => ({ size, ...p }: P) => <svg {...base(size, p)}><path d={d} /></svg>
 
 export const Icon = {
@@ -42,18 +43,4 @@ export const Icon = {
   wind: I('M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8a2 2 0 1 1-2 2'),
   drop: I('M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z'),
   scene: I('M12 3l2.2 5.3 5.8.5-4.4 3.8 1.3 5.7L12 15.3l-4.9 3 1.3-5.7L4 8.8l5.8-.5z'),
-}
-
-export function WeatherIcon({ condition, size = 48 }: { condition: string; size?: number }) {
-  const map: Record<string, keyof typeof Icon> = {
-    'sunny': 'sun', 'clear-night': 'moon', 'partlycloudy': 'cloudSun', 'cloudy': 'cloud', 'rainy': 'rain', 'pouring': 'rain',
-    'snowy': 'snow', 'snowy-rainy': 'snow', 'lightning': 'storm', 'lightning-rainy': 'storm', 'fog': 'fog', 'windy': 'wind', 'windy-variant': 'wind', 'hail': 'snow', 'exceptional': 'cloud',
-  }
-  const C = Icon[map[condition] ?? 'cloud']
-  return <C size={size} />
-}
-
-export const conditionLabel: Record<string, string> = {
-  'sunny': 'Sonnig', 'clear-night': 'Klar', 'partlycloudy': 'Teils bewölkt', 'cloudy': 'Bewölkt', 'rainy': 'Regen', 'pouring': 'Starkregen',
-  'snowy': 'Schnee', 'snowy-rainy': 'Schneeregen', 'lightning': 'Gewitter', 'lightning-rainy': 'Gewitter', 'fog': 'Nebel', 'windy': 'Windig', 'windy-variant': 'Windig', 'hail': 'Hagel', 'exceptional': 'Unwetter',
 }

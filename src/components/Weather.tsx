@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { config } from '../config'
 import { useEntity, useHa } from '../ha/useHa'
 import type { ForecastDay } from '../ha/types'
-import { Icon, WeatherIcon, conditionLabel } from './Icons'
+import { Icon } from './Icons'
+import { WeatherIcon } from './WeatherIcon'
+import { conditionLabel } from './weatherLabels'
 
 export function Weather({ compact = false }: { compact?: boolean }) {
   const ha = useHa()

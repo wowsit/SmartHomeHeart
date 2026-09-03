@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { config } from '../config'
 import { useHa } from '../ha/useHa'
 import { Icon } from './Icons'
-import { calendarBus } from './Calendar'
+import { calendarBus } from './calendarData'
 
 const ROWS = ['qwertzuiopü', 'asdfghjklöä', 'yxcvbnmß,.-', '1234567890']
 
