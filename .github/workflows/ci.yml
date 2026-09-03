@@ -1,0 +1,80 @@
+# CI für SmartHomeHeart: läuft bei jedem Push auf main und bei jedem Pull Request.
+# 1) frontend  – Lint (oxlint), Typecheck (tsc -b), Vite-Build; dist als Artifact
+# 2) python    – Syntax-/Pyflakes-Check der Assistant-Sidecars (calhelper, groq_stt)
+# 3) docker    – baut die drei Images (Dashboard/nginx, calhelper, groq_stt) ohne Push
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (lint, typecheck, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint (oxlint)
+        run: npm run lint
+      - name: Typecheck (tsc -b)
+        run: npx tsc -b
+      - name: Build (vite)
+        env:
+          VITE_HA_URL: auto
+        run: npx vite build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  python:
+    name: Assistant sidecars (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - name: Syntax + pyflakes
+        run: ruff check --select E9,F assistant
+
+  docker:
+    name: Docker build (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: dashboard
+            context: .
+            dockerfile: deploy/Dockerfile
+          - name: calhelper
+            context: assistant/calhelper
+            dockerfile: assistant/calhelper/Dockerfile
+          - name: groq_stt
+            context: assistant/groq_stt
+            dockerfile: assistant/groq_stt/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: false
+          build-args: |
+            VITE_HA_URL=auto
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
