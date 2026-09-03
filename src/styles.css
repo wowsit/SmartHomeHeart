@@ -197,12 +197,14 @@ h3 { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transfo
   --cal-blue-bg: hsl(212, 60%, 90%);  --cal-blue-fg: hsl(214, 60%, 30%);  --cal-blue: hsl(212, 65%, 50%);
   --cal-orange-bg: hsl(24, 85%, 90%); --cal-orange-fg: hsl(20, 75%, 30%); --cal-orange: hsl(22, 80%, 52%);
   --cal-purple-bg: hsl(270, 45%, 91%);--cal-purple-fg: hsl(270, 40%, 32%);--cal-purple: hsl(268, 45%, 52%);
+  --cal-pink-bg: hsl(335, 75%, 91%);  --cal-pink-fg: hsl(335, 60%, 32%);  --cal-pink: hsl(335, 75%, 56%);
   --cal-grey-bg: var(--g-200);        --cal-grey-fg: var(--g-700);        --cal-grey: var(--g-500);
 }
 .cal-green  { --c-bg: var(--cal-green-bg);  --c-fg: var(--cal-green-fg);  --c: var(--cal-green); }
 .cal-blue   { --c-bg: var(--cal-blue-bg);   --c-fg: var(--cal-blue-fg);   --c: var(--cal-blue); }
 .cal-orange { --c-bg: var(--cal-orange-bg); --c-fg: var(--cal-orange-fg); --c: var(--cal-orange); }
 .cal-purple { --c-bg: var(--cal-purple-bg); --c-fg: var(--cal-purple-fg); --c: var(--cal-purple); }
+.cal-pink   { --c-bg: var(--cal-pink-bg);   --c-fg: var(--cal-pink-fg);   --c: var(--cal-pink); }
 .cal-grey   { --c-bg: var(--cal-grey-bg);   --c-fg: var(--cal-grey-fg);   --c: var(--cal-grey); }
 .event-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); flex: none; }
 
@@ -355,7 +357,7 @@ h3 { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transfo
 .sheet-options { display: flex; align-items: center; gap: var(--s-5); flex-wrap: wrap; }
 .pill { height: 56px; padding: 0 var(--s-5); border-radius: 999px; background: var(--surface-2); color: var(--text-2); font-size: var(--t-base); font-weight: 500; }
 .pill.on { background: var(--g-900); color: var(--g-50); }
-.pill.cal-green.on, .pill.cal-blue.on, .pill.cal-orange.on, .pill.cal-purple.on { background: var(--c); }
+.pill.cal-green.on, .pill.cal-blue.on, .pill.cal-orange.on, .pill.cal-purple.on, .pill.cal-pink.on { background: var(--c); }
 .stepper { display: flex; align-items: center; gap: var(--s-2); }
 .stepper-label { font-size: var(--t-sm); color: var(--muted); width: 40px; }
 .stepper-value { font-size: var(--t-xl); font-weight: 600; font-variant-numeric: tabular-nums; width: 80px; text-align: center; }

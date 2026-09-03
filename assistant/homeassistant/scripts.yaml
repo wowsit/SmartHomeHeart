@@ -26,7 +26,7 @@ kalendereintrag_erstellen:
         datetime: {}
     kalender:
       name: Kalender
-      description: 'Zielkalender: ''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      description: 'Zielkalender: ''hjem'' (privat, Standard), ''arbeid'' (Arbeit), ''kalender'' (Geburtstage/Familie, 2. Account), ''arbeit'', ''privat'' oder ''familie'' (2. Account)'
       required: false
       default: hjem
       selector:
@@ -69,7 +69,7 @@ termin_loeschen:
         date: {}
     kalender:
       name: Kalender
-      description: '''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      description: '''hjem'' (privat, Standard), ''arbeid'' (Arbeit), ''kalender'' (Geburtstage), ''arbeit'', ''privat'' oder ''familie'''
       required: false
       default: hjem
       selector:
@@ -124,7 +124,7 @@ termin_verschieben:
         text: {}
     kalender:
       name: Kalender
-      description: '''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      description: '''hjem'' (privat, Standard), ''arbeid'' (Arbeit), ''kalender'' (Geburtstage), ''arbeit'', ''privat'' oder ''familie'''
       required: false
       default: hjem
       selector:

@@ -8,7 +8,7 @@ export interface RoomConfig {
   entities: string[] // light.*, switch.*, climate.*
 }
 
-export type CalColor = 'green' | 'blue' | 'orange' | 'purple' | 'grey'
+export type CalColor = 'green' | 'blue' | 'orange' | 'purple' | 'pink' | 'grey'
 export interface CalendarConfig {
   entity: string // HA calendar entity, z. B. calendar.max (Google/CalDAV/… läuft über HA)
   name: string
@@ -32,6 +32,11 @@ export const config = {
     // iCloud über HA-CalDAV (Entities aus HA, Stand 2026-09-03). 'calendar.untitled' ist leer und bewusst nicht gelistet.
     { entity: 'calendar.hjem', name: 'Hjem', color: 'green' },
     { entity: 'calendar.arbeid', name: 'Arbeid', color: 'blue' },
+    // Zweiter iCloud-Account (vt92@gmx.de, CalDAV-Eintrag seit 2026-09-03) – alle pink (Wunsch). 'Schule' etc. sind dort Erinnerungslisten (todo.*), keine Kalender.
+    { entity: 'calendar.kalender', name: 'Kalender', color: 'pink' },
+    { entity: 'calendar.arbeit', name: 'Arbeit', color: 'pink' },
+    { entity: 'calendar.privat', name: 'Privat', color: 'pink' },
+    { entity: 'calendar.familie', name: 'Familie', color: 'pink' },
   ] as CalendarConfig[],
   mediaPlayer: 'media_player.wohnzimmer',
   scenes: [
