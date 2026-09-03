@@ -15,8 +15,8 @@ HA Assist-Pipeline „Haus (Claude)“ (Sprache: de)
    │          script.kalendereintrag_erstellen  → calendar.create_event
    │          script.termin_loeschen            → rest_command.calhelper_delete → calhelper /delete
    │          script.termin_verschieben         → rest_command.calhelper_move   → calhelper /move
-   └─ TTS:  tts.piper ── Wyoming ──▶ piper-Container (de_DE-thorsten-medium, length-scale 0.85, lokal, streaming)
-            (Fallback: tts.google_translate_en_com)
+   └─ TTS:  tts.edge_tts_service_edge_tts (custom_components/edge_tts, de-DE-SeraphinaMultilingualNeural, rate +12 %, streaming)
+            Fallback: tts.piper ── Wyoming ──▶ piper-Container (de_DE-thorsten-medium, lokal); Notnagel: tts.google_translate_en_com
 ```
 
 Freigegebene Entitäten: `calendar.hjem` (privat), `calendar.arbeid` (Arbeit), `weather.forecast_home` und die drei Skripte.
@@ -38,7 +38,7 @@ Der alte Container `whisper` (`rhasspy/wyoming-whisper`, tiny-int8, Port 10300) 
 3. HA → Einstellungen → Geräte & Dienste → **Wyoming Protocol** hinzufügen: Host `127.0.0.1`, Port `10301` → `stt.groq_whisper`.
 4. **Anthropic**-Integration hinzufügen (API-Key), im Unterpunkt „Konversation“ den Prompt aus `claude_prompt.txt` einsetzen und „Assist“ als Steuerung aktivieren.
 5. `homeassistant/rest_command.yaml` in `configuration.yaml` einfügen → HA neu starten. Skripte aus `scripts.yaml` anlegen.
-6. Einstellungen → Sprachassistenten → Pipeline „Haus (Claude)“: Sprache de, Konversationsagent Claude, STT groq-whisper, TTS Piper (de_DE, Stimme de_DE-thorsten-medium), **Lokale Intents bevorzugen = an**, als bevorzugt setzen. Piper vorher als Wyoming-Integration (127.0.0.1:10200) hinzufügen. Unter „Freigeben“ die Kalender, das Wetter und die drei Skripte freigeben.
+6. Einstellungen → Sprachassistenten → Pipeline „Haus (Claude)“: Sprache de, Konversationsagent Claude, STT groq-whisper, TTS Edge TTS (Sprache = Stimme `de-DE-SeraphinaMultilingualNeural`; Fallback Piper de_DE thorsten-medium), **Lokale Intents bevorzugen = an**, als bevorzugt setzen. Piper vorher als Wyoming-Integration (127.0.0.1:10200) hinzufügen. Unter „Freigeben“ die Kalender, das Wetter und die drei Skripte freigeben.
 
 ## Optimierung (Tempo, Kürze)
 

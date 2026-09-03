@@ -1,6 +1,6 @@
 # Ist-Stand `homehole` – automatisch exportiert
 
-> Erzeugt am **2026-09-03 18:08 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
+> Erzeugt am **2026-09-03 18:26 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
 > neu erzeugt (`deploy/export-state.sh`). Geheimnisse (Tokens, Passwörter, API-Keys, E-Mail-Adressen) sind maskiert.
 > Rohdateien liegen in [`docs/ist-stand/`](ist-stand/). Architektur & Aufbau-Anleitung: [`AUFBAU.md`](AUFBAU.md), Sprachassistent: [`../assistant/README.md`](../assistant/README.md).
 
@@ -11,9 +11,9 @@
 | Host | HomeHole |
 | OS / Kernel | Debian GNU/Linux 13 (trixie) / 6.18.34+rpt-rpi-v8 |
 | Modell | Raspberry Pi 4 Model B Rev 1.5 |
-| Uptime | up 1 hour, 24 minutes |
-| RAM | 1.3Gi belegt von 1.8Gi |
-| Disk / | 16G belegt von 29G (57%) |
+| Uptime | up 1 hour, 42 minutes |
+| RAM | 1.2Gi belegt von 1.8Gi |
+| Disk / | 16G belegt von 29G (58%) |
 | Docker | 29.7.2, build a7dcaa6 |
 | Tailscale | 1.102.3 |
 | LAN-IP | 192.168.178.151 |
@@ -39,9 +39,9 @@
 
 | Was | Wert |
 |---|---|
-| Deployter Build | 064c688 (main) deployed 2026-09-03 16:40 CEST |
-| Assets | index-DeBlR2Va.js, index-cVlT78Jj.css |
-| dist geändert | 2026-09-03 16:37 |
+| Deployter Build | 7a6288a (main) deployed 2026-09-03 16:23 UTC |
+| Assets | index-n93kYJEE.js, index-cVlT78Jj.css |
+| dist geändert | 2026-09-03 18:21 |
 | HA-URL-Modus | auto (location.hostname:8123 / bei https same-origin) |
 | TLS-Zertifikat | notAfter=Aug 31 14:38:12 2036 GMT X509v3 Subject Alternative Name: DNS:localhost, DNS:HomeHole, DNS:HomeHole.local, IP Address:127.0.0.1, IP Address:192.168.178.151, IP Address:100.109.2.10, DNS:homehole.tailea3a91.ts.net |
 | Backups | dist.bak-20260903-160124, dist.bak-20260903-163812 |
@@ -60,6 +60,7 @@ nginx-Konfiguration: [`ist-stand/nginx.conf`](ist-stand/nginx.conf)
 | backup | Backup | system |  | – | – |
 | bluetooth | Raspberry Pi Trading Ltd None (D8:3A:DD:87:BD:3B) | integration_discovery |  | – | – |
 | caldav | <email> | user |  | password, url, username, verify_ssl | – |
+| edge_tts | Edge TTS | user |  | – | – |
 | go2rtc | go2rtc | system |  | – | – |
 | google_translate | Google Translate text-to-speech | onboarding |  | language, tld | – |
 | home_connect |  <email> | user |  | auth_implementation, token | – |
@@ -81,7 +82,7 @@ Optionen: `{"chat_model": "claude-haiku-4-5", "code_execution": false, "llm_hass
 | Name | Sprache | Konversation | STT | TTS (Stimme) | Lokale Intents | Wake-Word Entity / ID |
 |---|---|---|---|---|---|---|
 | Home Assistant | en | conversation.home_assistant | – | – | nein | – / – |
-| ★ Haus (Claude) | de | conversation.claude_conversation | stt.groq_whisper | tts.piper (de_DE-thorsten-medium) | ja | wake_word.openwakeword / hey_jarvis |
+| ★ Haus (Claude) | de | conversation.claude_conversation | stt.groq_whisper | tts.edge_tts_service_edge_tts | ja | wake_word.openwakeword / hey_jarvis |
 
 ### Für Assist freigegebene Entitäten (explizit)
 
@@ -108,12 +109,13 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 |---|---|
 | emfy | device_tracker.fynns_iphone |
 
-### Entitäten (76)
+### Entitäten (78)
 
 | Integration | Entity-ID | Name | Bereich | Status | Assist |
 |---|---|---|---|---|---|
 | anthropic | `ai_task.claude_ai_task` |  | – | aktiv | – |
 | anthropic | `conversation.claude_conversation` |  | – | aktiv | – |
+| automation | `automation.kalender_live_icloud_abgleichen_dashboard_benachrichtigen` | Kalender live: iCloud abgleichen + Dashboard benachrichtigen | – | aktiv | – |
 | backup | `event.backup_automatic_backup` | Automatic backup | – | aktiv | – |
 | backup | `sensor.backup_backup_manager_state` | Backup Manager state | – | aktiv | – |
 | backup | `sensor.backup_last_attempted_automatic_backup` | Last attempted automatic backup | – | aktiv | – |
@@ -123,6 +125,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 | caldav | `calendar.hjem` | Hjem | – | aktiv | ja |
 | caldav | `calendar.untitled` | Untitled | – | aktiv | – |
 | caldav | `todo.paminnelser` | Påminnelser ⚠️ | – | aktiv | ja |
+| edge_tts | `tts.edge_tts_service_edge_tts` | Edge TTS | – | aktiv | – |
 | google_translate | `tts.google_translate_en_com` | Google Translate en com | – | aktiv | – |
 | home_connect | `binary_sensor.oven_connectivity` | Connectivity | Kitchen | aktiv | – |
 | home_connect | `binary_sensor.oven_interior_illumination_active` | Interior illumination active | Kitchen | aktiv | – |
@@ -192,7 +195,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 ### YAML-Konfiguration (Kopien, Geheimnisse maskiert)
 
 - [`ist-stand/configuration.yaml`](ist-stand/configuration.yaml) (24 Zeilen)
-- [`ist-stand/automations.yaml`](ist-stand/automations.yaml) (1 Zeilen)
+- [`ist-stand/automations.yaml`](ist-stand/automations.yaml) (34 Zeilen)
 - [`ist-stand/scripts.yaml`](ist-stand/scripts.yaml) (156 Zeilen)
 - [`ist-stand/scenes.yaml`](ist-stand/scenes.yaml) (0 Zeilen)
 
@@ -206,7 +209,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 
 ### Automationen
 
-_keine_
+- 'Kalender live: iCloud abgleichen + Dashboard benachrichtigen'
 
 ### Repo ↔ Pi
 
@@ -217,21 +220,18 @@ _keine_
 ### Letzte Warnungen/Fehler im HA-Log
 
 ```
-2026-09-03 17:12:52.858 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:19:17.789 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:22:53.145 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:29:18.118 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:32:53.372 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:39:18.234 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:42:53.779 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:49:18.493 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:52:54.078 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 17:59:18.583 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:02:54.473 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:05:00.110 ERROR (MainThread) [homeassistant.components.tts] Error on init tts: Language 'de' not supported
-2026-09-03 18:05:00.113 ERROR (MainThread) [homeassistant.helpers.http] Unable to serialize to JSON. Bad data found at $.error=Language 'de' not supported(<class 'homeassistant.exceptions.HomeAssistantError'>
-2026-09-03 18:05:17.736 ERROR (MainThread) [homeassistant.components.tts] Error on init tts: Language 'de' not supported
-2026-09-03 18:05:17.737 ERROR (MainThread) [homeassistant.helpers.http] Unable to serialize to JSON. Bad data found at $.error=Language 'de' not supported(<class 'homeassistant.exceptions.HomeAssistantError'>
+2026-09-03 18:23:31.332 WARNING (SyncWorker_0) [homeassistant.loader] We found a custom integration edge_tts which has not been tested by Home Assistant. This component might cause stability problems, be sure to disable it if you experience issues with Home Assistant
+2026-09-03 18:23:32.487 WARNING (MainThread) [homeassistant.components.http.ban] Login attempt or request with invalid authentication from localhost (127.0.0.1). Requested URL: '/api/'. (curl/8.14.1)
+2026-09-03 18:23:35.120 ERROR (MainThread) [habluetooth.manager] Missing required permissions for Bluetooth management. Automatic adapter recovery is unavailable. Add NET_ADMIN and NET_RAW capabilities to the container to enable it
+2026-09-03 18:23:35.128 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:23:49.058 ERROR (MainThread) [homeassistant.components.home_connect.coordinator] Error fetching 01KZZKFPJD9HRGDEK4GD1T2JVH-386060532692004457-001 data: Appliance Oven (386060532692004457-001) is disconnected
+2026-09-03 18:23:50.535 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:23:50.547 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:23:55.995 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:24:00.719 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:24:16.249 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:24:40.907 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:25:36.665 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 ```
 
 ## Sprachassistent
@@ -241,7 +241,7 @@ _keine_
 | openwakeword custom models | – |
 | whisper-Modelle (Fallback) | models--rhasspy--faster-whisper-tiny-int8 |
 | groq_stt letzte Aufnahme | – |
-| TTS-Cache | 39 Dateien |
+| TTS-Cache | 57 Dateien |
 
 ## Offene Ports (Host)
 

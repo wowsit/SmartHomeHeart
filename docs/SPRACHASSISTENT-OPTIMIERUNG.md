@@ -26,6 +26,27 @@ Gemessen nach der Umstellung über die komplette Pipeline (Text rein, TTS raus, 
 | „Nimm Milch von der Einkaufsliste“ | Claude + Tool | 2,4 s | „Milch von der Einkaufsliste genommen.“ |
 
 Piper-TTS (thorsten-medium, Pi 4): 0,8–1,3 s pro Satz warm, erster Aufruf nach Start ~8 s (Modell laden).
+
+### TTS-Stimme: Microsoft Edge TTS (seit 2026-09-03 18:25)
+
+Wunsch: weibliche, natürliche Stimme, etwas schneller. Piper hat auf Deutsch nur „low“-Frauenstimmen (kerstin, ramona, eva_k – blechern).
+Deshalb Custom-Integration [hasscc/hass-edge-tts](https://github.com/hasscc/hass-edge-tts) (kostenlos, kein Key, streamt Satz für Satz):
+
+| Stimme | Charakter | Latenz pro Satz (vom Pi gemessen) |
+|---|---|---|
+| **`de-DE-SeraphinaMultilingualNeural`** (aktiv) | warm, natürlich, „Werbestimme“ | 1,6–2,9 s |
+| `de-DE-KatjaNeural` | klar, neutral | 0,6–2,0 s (schneller) |
+| `de-DE-AmalaNeural` | jung, freundlich | ~2 s |
+| Piper `de_DE-thorsten-medium` (Fallback, lokal) | männlich | 0,9–1,4 s |
+
+Sprechtempo: `rate: "+12%"`. Einstellung liegt in den Optionen des Config-Eintrags `edge_tts` (`voice`, `rate`, `language`).
+Die UI-Optionsmaske kennt nur `language` – `voice`/`rate` deshalb per Storage-Edit (HA stoppen, `.storage/core.config_entries`
+→ Eintrag `edge_tts` → `options`, HA starten) oder per Pipeline-Sprache (Pipeline-`tts_language` = Voice-Name).
+Pipeline „Haus (Claude)“: `tts_engine: tts.edge_tts_service_edge_tts`, `tts_language: de-DE-SeraphinaMultilingualNeural`.
+
+Installation: `custom_components/edge_tts` (Release v0.7.7) nach `~/homeassistant/custom_components/`, HA neu starten,
+Integration „Microsoft Edge TTS“ hinzufügen (`POST /api/config/config_entries/flow {"handler":"edge_tts"}` legt den Eintrag ohne Formular an).
+Risiko: inoffizielle Nutzung des Edge-Browser-Dienstes – fällt sie aus, Pipeline auf `tts.piper` zurückstellen (Container läuft weiter).
 Google Translate war mit 0,7 s zwar ähnlich schnell, kann aber weder streamen noch schneller sprechen.
 
 Frühere Messung, Text direkt an `conversation.claude_conversation` (ohne STT/TTS):
@@ -58,7 +79,7 @@ Kalenderabfrage 4,3 s (Tool-Aufruf + Antwort). Vorher lagen allein Thinking + la
    nie nur in HA klicken. Der Drift-Check in `IST-STAND.md` zeigt Abweichungen.
 6. **STT nicht blind vertrauen**: Halluzinationsfilter in `groq_stt.py` bleibt an; neue Floskeln, die in
    `docker logs groq_stt` auftauchen, in `HALLUCINATIONS` ergänzen. Neue Fachwörter in `STT_PROMPT` (`.env`) ergänzen.
-7. **TTS muss streamen können**: Piper (lokal) oder ein Cloud-TTS mit Streaming. Google Translate nur als Fallback.
+7. **TTS muss streamen können**: Edge TTS (aktiv) oder Piper (lokal, Fallback). Google Translate nur als Notnagel.
    Sprechtempo über `length_scale` (0,85–0,9), nicht über den Text.
 8. **Jede Änderung messen**: `curl -X POST …/api/conversation/process` mit 3–4 Standardfragen (Wetter, Kalender,
    Liste, Gerät) und Zeit stoppen; Ziel < 3 s bis zum ersten gesprochenen Wort. Ergebnis in `IST-STAND.md` landet

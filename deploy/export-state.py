@@ -221,7 +221,7 @@ def sec_ha(out: Path) -> str:
     diffs = []
     repo = Path(os.environ.get("REPO_DIR", "")) if os.environ.get("REPO_DIR") else None
     if repo and repo.exists():
-        for live, src in (("scripts.yaml", "assistant/homeassistant/scripts.yaml"), ("claude_prompt.live.txt", "assistant/homeassistant/claude_prompt.txt"), ("nginx.conf", "deploy/nginx.conf")):
+        for live, src in (("scripts.yaml", "assistant/homeassistant/scripts.yaml"), ("automations.yaml", "assistant/homeassistant/automations.yaml"), ("claude_prompt.live.txt", "assistant/homeassistant/claude_prompt.txt"), ("nginx.conf", "deploy/nginx.conf")):
             a, b = read(out / live), read(repo / src)
             if a is not None and b is not None:
                 norm = lambda t: ' '.join(re.sub(r'^\s*#.*$', '', t, flags=re.M).split())  # noqa: E731
