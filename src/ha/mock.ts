@@ -1,3 +1,4 @@
+import { config } from '../config'
 import type { NewCalendarEvent, HaBackend, EntityMap, HaEntity, ConnState, ForecastDay, CalendarEvent } from './types'
 
 function ent(entity_id: string, state: string, attributes: Record<string, any> = {}): HaEntity {
@@ -27,7 +28,7 @@ function initialEntities(): EntityMap {
     sw('switch.steckdose_flur', 'Steckdose', false),
     light('light.buero', 'Büro', true, 230),
     sw('switch.schreibtisch', 'Schreibtisch', true),
-    ent('weather.home', 'partlycloudy', {
+    ent(config.weather, 'partlycloudy', {
       friendly_name: 'Zuhause', temperature: 19.5, humidity: 58, wind_speed: 14.2, wind_bearing: 240,
       pressure: 1014, temperature_unit: '°C', wind_speed_unit: 'km/h',
     }),
@@ -50,8 +51,8 @@ export class MockBackend implements HaBackend {
   constructor() {
     // kleine Live-Änderungen, damit man sieht, dass Updates durchkommen
     this.timer = setInterval(() => {
-      const w = this.entities['weather.home']
-      this.patch('weather.home', { attributes: { ...w.attributes, temperature: Math.round((w.attributes.temperature + (Math.random() - 0.5) * 0.2) * 10) / 10 } })
+      const w = this.entities[config.weather]
+      this.patch(config.weather, { attributes: { ...w.attributes, temperature: Math.round((w.attributes.temperature + (Math.random() - 0.5) * 0.2) * 10) / 10 } })
       const m = this.entities['media_player.wohnzimmer']
       if (m.state === 'playing') {
         const pos = (m.attributes.media_position ?? 0) + 5

@@ -82,7 +82,7 @@ function useMonth(monthOffset: number) {
 function MonthGrid({ cells, first, byDay, today, selected, onSelect, compact }: {
   cells: Date[]; first: Date; byDay: Map<string, CalendarEvent[]>; today: string; selected: string; onSelect: (k: string) => void; compact?: boolean
 }) {
-  const maxChips = compact ? 2 : 4
+  const maxChips = compact ? 3 : 4
   return (
     <>
       <div className="month-weekdays">{WEEKDAYS.map((w) => <span key={w}>{w}</span>)}</div>
@@ -94,14 +94,10 @@ function MonthGrid({ cells, first, byDay, today, selected, onSelect, compact }: 
           return (
             <button key={k} className={cls} onClick={() => onSelect(k)}>
               <span className="day-num">{d.getDate()}</span>
-              {compact ? (
-                <span className="dots">{list.slice(0, 3).map((ev, i) => <span key={i} className={`event-dot cal-${calColor(ev.calendar)}`} />)}</span>
-              ) : (
-                <span className="chips">
-                  {list.slice(0, maxChips).map((ev, i) => <span key={i} className={`chip cal-${calColor(ev.calendar)}`}>{ev.summary}</span>)}
-                  {list.length > maxChips && <span className="chip more">+{list.length - maxChips}</span>}
-                </span>
-              )}
+              <span className="chips">
+                {list.slice(0, maxChips).map((ev, i) => <span key={i} className={`chip cal-${calColor(ev.calendar)}`}>{ev.summary}</span>)}
+                {list.length > maxChips && <span className="chip more">+{list.length - maxChips}</span>}
+              </span>
             </button>
           )
         })}
@@ -115,15 +111,36 @@ const dayLabel = (k: string, today: string) => {
   return `${k === today ? 'Heute' : d.toLocaleDateString('de-DE', { weekday: 'long' })} · ${d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}`
 }
 
-/** Kompakter Monatskalender für die Übersicht – Tag antippen zeigt die Termine direkt darunter, Monatsname öffnet die Kalender-Seite. */
+/** Termine eines Tages als Sheet – erscheint, wenn im Widget ein Tag angetippt wird. */
+function DaySheet({ day, today, events, onClose, onOpen }: { day: string; today: string; events: CalendarEvent[]; onClose: () => void; onOpen: () => void }) {
+  const [adding, setAdding] = useState(false)
+  const now = new Date()
+  if (adding) return <AddEventSheet day={day} onClose={() => { setAdding(false); onClose() }} />
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet day-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <h2>{dayLabel(day, today)}</h2>
+          <button className="round" onClick={onClose} aria-label="Schließen"><Icon.close size={26} /></button>
+        </div>
+        <div className="day-sheet-list">
+          {events.length === 0 && <div className="empty">Keine Termine</div>}
+          {events.map((ev, i) => <EventRow key={i} ev={ev} now={now} />)}
+        </div>
+        <div className="sheet-options">
+          <button className="pill on" onClick={() => setAdding(true)}>+ Termin eintragen</button>
+          <button className="pill" onClick={() => { onClose(); onOpen() }}>Kalender öffnen</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Kompakter Monatskalender für die Übersicht – Termine stehen als Chips unter der Tageszahl, Tag antippen öffnet die Details, Monatsname öffnet die Kalender-Seite. */
 export function CalendarWidget({ onOpen }: { onOpen: () => void }) {
   const today = useToday()
-  const [selected, setSelected] = useState(today)
-  const [lastToday, setLastToday] = useState(today)
-  if (today !== lastToday) { setLastToday(today); setSelected(today) }
+  const [selected, setSelected] = useState<string | null>(null)
   const { first, cells, byDay } = useMonth(0)
-  const now = new Date()
-  const list = byDay.get(selected) ?? []
 
   return (
     <div className="card cal-widget">
@@ -131,13 +148,8 @@ export function CalendarWidget({ onOpen }: { onOpen: () => void }) {
         <span className="cal-widget-month">{first.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</span>
         <Icon.chevR size={24} />
       </button>
-      <MonthGrid cells={cells} first={first} byDay={byDay} today={today} selected={selected} onSelect={setSelected} compact />
-      <div className="cal-widget-day">
-        <div className="cal-widget-day-title">{dayLabel(selected, today)}</div>
-        {list.length === 0 && <div className="empty">Keine Termine</div>}
-        {list.slice(0, 3).map((ev, i) => <EventRow key={i} ev={ev} now={now} />)}
-        {list.length > 3 && <button className="linkish" onClick={onOpen}>+{list.length - 3} weitere</button>}
-      </div>
+      <MonthGrid cells={cells} first={first} byDay={byDay} today={today} selected={selected ?? ''} onSelect={setSelected} compact />
+      {selected && <DaySheet day={selected} today={today} events={byDay.get(selected) ?? []} onClose={() => setSelected(null)} onOpen={onOpen} />}
     </div>
   )
 }
