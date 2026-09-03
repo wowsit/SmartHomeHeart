@@ -1,6 +1,6 @@
 # Ist-Stand `homehole` – automatisch exportiert
 
-> Erzeugt am **2026-09-03 19:03 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
+> Erzeugt am **2026-09-03 20:21 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
 > neu erzeugt (`deploy/export-state.sh`). Geheimnisse (Tokens, Passwörter, API-Keys, E-Mail-Adressen) sind maskiert.
 > Rohdateien liegen in [`docs/ist-stand/`](ist-stand/). Architektur & Aufbau-Anleitung: [`AUFBAU.md`](AUFBAU.md), Sprachassistent: [`../assistant/README.md`](../assistant/README.md).
 
@@ -11,8 +11,8 @@
 | Host | HomeHole |
 | OS / Kernel | Debian GNU/Linux 13 (trixie) / 6.18.34+rpt-rpi-v8 |
 | Modell | Raspberry Pi 4 Model B Rev 1.5 |
-| Uptime | up 2 hours, 19 minutes |
-| RAM | 1.2Gi belegt von 1.8Gi |
+| Uptime | up 3 hours, 37 minutes |
+| RAM | 1.3Gi belegt von 1.8Gi |
 | Disk / | 16G belegt von 29G (58%) |
 | Docker | 29.7.2, build a7dcaa6 |
 | Tailscale | 1.102.3 |
@@ -39,9 +39,9 @@
 
 | Was | Wert |
 |---|---|
-| Deployter Build | 15be1d4 (main) deployed 2026-09-03 19:03 CEST |
-| Assets | index-BB5alqnN.js, index-cm1bhJoO.css |
-| dist geändert | 2026-09-03 19:03 |
+| Deployter Build | 241815f (main) deployed 2026-09-03 20:20 CEST |
+| Assets | index-BZ89VZOS.js, index-CimLYieZ.css |
+| dist geändert | 2026-09-03 20:20 |
 | HA-URL-Modus | auto (location.hostname:8123 / bei https same-origin) |
 | TLS-Zertifikat | notAfter=Aug 31 14:38:12 2036 GMT X509v3 Subject Alternative Name: DNS:localhost, DNS:HomeHole, DNS:HomeHole.local, IP Address:127.0.0.1, IP Address:192.168.178.151, IP Address:100.109.2.10, DNS:homehole.tailea3a91.ts.net |
 | Backups | dist.bak-20260903-160124, dist.bak-20260903-163812 |
@@ -60,6 +60,7 @@ nginx-Konfiguration: [`ist-stand/nginx.conf`](ist-stand/nginx.conf)
 | backup | Backup | system |  | – | – |
 | bluetooth | Raspberry Pi Trading Ltd None (D8:3A:DD:87:BD:3B) | integration_discovery |  | – | – |
 | caldav | <email> | user |  | password, url, username, verify_ssl | – |
+| caldav | <email> | user |  | password, url, username, verify_ssl | – |
 | edge_tts | Edge TTS | user |  | – | – |
 | go2rtc | go2rtc | system |  | – | – |
 | google_translate | Google Translate text-to-speech | onboarding |  | language, tld | – |
@@ -67,6 +68,7 @@ nginx-Konfiguration: [`ist-stand/nginx.conf`](ist-stand/nginx.conf)
 | matter | Matter | zeroconf |  | integration_created_addon, url, use_addon | – |
 | met | Home | onboarding |  | track_home | – |
 | mobile_app | Fynn’s iPhone | registration |  | app_data, app_id, app_name, app_version, device_id, device_name, manufacturer, model, no_legacy_encryption, os_name, os_version, secret, supports_encryption, user_id, webhook_id | – |
+| otbr | Open Thread Border Router | user |  | url | – |
 | radio_browser | Radio Browser | onboarding |  | – | – |
 | shopping_list | Shopping list | onboarding |  | – | – |
 | sun | Sun | import |  | – | – |
@@ -77,7 +79,7 @@ nginx-Konfiguration: [`ist-stand/nginx.conf`](ist-stand/nginx.conf)
 
 ### Anthropic „Claude conversation“
 
-Optionen: `{"chat_model": "claude-haiku-4-5", "code_execution": false, "llm_hass_api": ["assist"], "max_tokens": 250, "prompt_caching": "prompt", "recommended": false, "thinking_budget": 0, "user_location": false, "web_fetch": false, "web_fetch_max_uses": 5, "web_search": false, "web_search_max_uses": 5}` – Prompt (2283 Zeichen): [`ist-stand/claude_prompt.live.txt`](ist-stand/claude_prompt.live.txt)
+Optionen: `{"chat_model": "claude-haiku-4-5", "code_execution": false, "llm_hass_api": ["assist"], "max_tokens": 250, "prompt_caching": "prompt", "recommended": false, "thinking_budget": 0, "user_location": false, "web_fetch": false, "web_fetch_max_uses": 5, "web_search": false, "web_search_max_uses": 5}` – Prompt (2349 Zeichen): [`ist-stand/claude_prompt.live.txt`](ist-stand/claude_prompt.live.txt)
 
 ### Assist-Pipelines (★ = bevorzugt)
 
@@ -111,7 +113,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 |---|---|
 | emfy | device_tracker.fynns_iphone |
 
-### Entitäten (78)
+### Entitäten (89)
 
 | Integration | Entity-ID | Name | Bereich | Status | Assist |
 |---|---|---|---|---|---|
@@ -124,9 +126,20 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 | backup | `sensor.backup_last_successful_automatic_backup` | Last successful automatic backup | – | aktiv | – |
 | backup | `sensor.backup_next_scheduled_automatic_backup` | Next scheduled automatic backup | – | aktiv | – |
 | caldav | `calendar.arbeid` | Arbeid | – | aktiv | ja |
+| caldav | `calendar.arbeit` | Arbeit | – | aktiv | ja |
+| caldav | `calendar.familie` | Familie | – | aktiv | ja |
 | caldav | `calendar.hjem` | Hjem | – | aktiv | ja |
+| caldav | `calendar.kalender` | Kalender | – | aktiv | ja |
+| caldav | `calendar.privat` | Privat | – | aktiv | ja |
 | caldav | `calendar.untitled` | Untitled | – | aktiv | – |
+| caldav | `todo.erinnerungen` | Erinnerungen | – | aktiv | ja |
+| caldav | `todo.familie` | Familie | – | aktiv | ja |
+| caldav | `todo.fremdworter_zum_nachschlagen` | Fremdwörter zum nachschlagen | – | aktiv | ja |
+| caldav | `todo.musik` | Musik | – | aktiv | ja |
 | caldav | `todo.paminnelser` | Påminnelser ⚠️ | – | aktiv | ja |
+| caldav | `todo.runterladen` | Runterladen | – | aktiv | ja |
+| caldav | `todo.schule` | Schule | – | aktiv | ja |
+| caldav | `todo.verabredungen` | Verabredungen | – | aktiv | ja |
 | edge_tts | `tts.edge_tts_service_edge_tts` | Edge TTS | – | aktiv | – |
 | google_translate | `tts.google_translate_en_com` | Google Translate en com | – | aktiv | – |
 | home_connect | `binary_sensor.oven_connectivity` | Connectivity | Kitchen | aktiv | – |
@@ -197,8 +210,8 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 ### YAML-Konfiguration (Kopien, Geheimnisse maskiert)
 
 - [`ist-stand/configuration.yaml`](ist-stand/configuration.yaml) (24 Zeilen)
-- [`ist-stand/automations.yaml`](ist-stand/automations.yaml) (39 Zeilen)
-- [`ist-stand/scripts.yaml`](ist-stand/scripts.yaml) (156 Zeilen)
+- [`ist-stand/automations.yaml`](ist-stand/automations.yaml) (43 Zeilen)
+- [`ist-stand/scripts.yaml`](ist-stand/scripts.yaml) (146 Zeilen)
 - [`ist-stand/scenes.yaml`](ist-stand/scenes.yaml) (0 Zeilen)
 
 ### Skripte
@@ -222,21 +235,21 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 ### Letzte Warnungen/Fehler im HA-Log
 
 ```
-2026-09-03 18:51:54.645 WARNING (SyncWorker_0) [homeassistant.loader] We found a custom integration edge_tts which has not been tested by Home Assistant. This component might cause stability problems, be sure to disable it if you experience issues with Home Assistant
-2026-09-03 18:51:58.424 ERROR (MainThread) [habluetooth.manager] Missing required permissions for Bluetooth management. Automatic adapter recovery is unavailable. Add NET_ADMIN and NET_RAW capabilities to the container to enable it
-2026-09-03 18:51:58.433 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:51:58.504 WARNING (MainThread) [homeassistant.components.http.ban] Login attempt or request with invalid authentication from localhost (127.0.0.1). Requested URL: '/api/'. (curl/8.14.1)
-2026-09-03 18:52:11.677 ERROR (MainThread) [homeassistant.components.home_connect.coordinator] Error fetching 01KZZKFPJD9HRGDEK4GD1T2JVH-386060532692004457-001 data: Appliance Oven (386060532692004457-001) is disconnected
-2026-09-03 18:52:12.280 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:52:12.291 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:52:17.444 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:52:22.596 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:52:37.568 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:53:03.016 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:53:38.569 ERROR (MainThread) [homeassistant.components.websocket_api.http.connection] [547246841680] Error handling message: expected str for dictionary value @ data['pipeline_run_id']. Got {'pipeline_run_id': '01M1M317XDGWBXDDQAYS5WQ6TY', 'timestamp': '2026-09-03T16:53:32.205982+00:00'} (invalid_format) emfy from 127.0.0.1 (Python/3.13 websockets/17.1)
-2026-09-03 18:53:57.805 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:55:43.203 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:59:17.994 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 19:29:19.080 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 19:35:44.770 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 19:39:19.524 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 19:45:44.948 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 19:49:19.763 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 19:55:45.388 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 19:59:19.908 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 20:04:57.561 WARNING (MainThread) [homeassistant.components.http.ban] Login attempt or request with invalid authentication from 192.168.178.150 (192.168.178.150). Requested URL: '/api/websocket'. (Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Home Assistant/2026.9.0 (io.robbie.HomeAssistant; build:2026.2874; iOS 26.6.1) Mobile/HomeAssistant, like Safari)
+2026-09-03 20:05:45.537 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 20:07:52.611 WARNING (SyncWorker_0) [urllib3.connectionpool] Connection pool is full, discarding connection: p168-caldav.icloud.com. Connection pool size: 10
+2026-09-03 20:09:20.168 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 20:15:45.878 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 20:16:39.023 WARNING (SyncWorker_10) [urllib3.connectionpool] Connection pool is full, discarding connection: p168-caldav.icloud.com. Connection pool size: 10
+2026-09-03 20:18:47.289 WARNING (MainThread) [homeassistant.components.http.ban] Login attempt or request with invalid authentication from 192.168.178.150 (192.168.178.150). Requested URL: '/api/websocket'. (Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Home Assistant/2026.9.0 (io.robbie.HomeAssistant; build:2026.2874; iOS 26.6.1) Mobile/HomeAssistant, like Safari)
+2026-09-03 20:19:20.339 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 ```
 
 ## Sprachassistent
@@ -246,7 +259,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 | openwakeword custom models | – |
 | whisper-Modelle (Fallback) | models--rhasspy--faster-whisper-tiny-int8 |
 | groq_stt letzte Aufnahme | – |
-| TTS-Cache | 62 Dateien |
+| TTS-Cache | 63 Dateien |
 
 ## Offene Ports (Host)
 

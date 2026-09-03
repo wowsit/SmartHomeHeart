@@ -32,6 +32,10 @@
       entity_id:
       - calendar.hjem
       - calendar.arbeid
+      - calendar.kalender
+      - calendar.arbeit
+      - calendar.privat
+      - calendar.familie
   - event: smarthomeheart_calendar_refreshed
     event_data:
       source: '{{ trigger.platform }}'

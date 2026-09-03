@@ -1,9 +1,8 @@
+# Assist-Werkzeuge für Claude (in HA: Einstellungen → Automationen & Szenen → Skripte, oder per scripts.yaml).
+# Danach unter Einstellungen → Sprachassistenten → Entitäten freigeben.
 kalendereintrag_erstellen:
   alias: Kalendereintrag erstellen
-  description: Erstellt einen neuen Termin im Kalender des Nutzers. Nutze dieses Werkzeug,
-    wenn der Nutzer einen Termin, eine Erinnerung mit Uhrzeit oder einen Kalendereintrag
-    anlegen möchte. Zeiten immer als lokale Zeit im Format YYYY-MM-DD HH:MM:SS angeben.
-    Wenn kein Ende genannt wird, 1 Stunde nach Start ansetzen.
+  description: Erstellt einen neuen Termin im Kalender des Nutzers. Nutze dieses Werkzeug, wenn der Nutzer einen Termin, eine Erinnerung mit Uhrzeit oder einen Kalendereintrag anlegen möchte. Zeiten immer als lokale Zeit im Format YYYY-MM-DD HH:MM:SS angeben. Wenn kein Ende genannt wird, 1 Stunde nach Start ansetzen.
   mode: parallel
   icon: mdi:calendar-plus
   fields:
@@ -21,14 +20,13 @@ kalendereintrag_erstellen:
         datetime: {}
     ende:
       name: Ende
-      description: 'Endzeit, Format YYYY-MM-DD HH:MM:SS (lokale Zeit). Standard: 1
-        Stunde nach Start.'
+      description: 'Endzeit, Format YYYY-MM-DD HH:MM:SS (lokale Zeit). Standard: 1 Stunde nach Start.'
       required: true
       selector:
         datetime: {}
     kalender:
       name: Kalender
-      description: 'Zielkalender: ''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      description: 'Zielkalender: ''hjem'' (privat, Standard), ''arbeid'' (Arbeit), ''kalender'' (Geburtstage/Familie, 2. Account), ''arbeit'', ''privat'' oder ''familie'' (2. Account)'
       required: false
       default: hjem
       selector:
@@ -53,11 +51,7 @@ kalendereintrag_erstellen:
       description: '{{ beschreibung | default('''') }}'
 termin_loeschen:
   alias: Termin löschen
-  description: Löscht einen bestehenden Termin aus dem Kalender des Nutzers. Nutze
-    dieses Werkzeug, wenn der Nutzer einen Termin absagen, entfernen oder löschen
-    möchte. Du brauchst den Titel (oder einen eindeutigen Teil davon) und den Tag
-    des Termins. Wenn der Tag unbekannt ist, finde ihn zuerst über die Kalender-Abfrage
-    heraus.
+  description: Löscht einen bestehenden Termin aus dem Kalender des Nutzers. Nutze dieses Werkzeug, wenn der Nutzer einen Termin absagen, entfernen oder löschen möchte. Du brauchst den Titel (oder einen eindeutigen Teil davon) und den Tag des Termins. Wenn der Tag unbekannt ist, finde ihn zuerst über die Kalender-Abfrage heraus.
   mode: parallel
   icon: mdi:calendar-remove
   fields:
@@ -75,7 +69,7 @@ termin_loeschen:
         date: {}
     kalender:
       name: Kalender
-      description: '''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      description: '''hjem'' (privat, Standard), ''arbeid'' (Arbeit), ''kalender'' (Geburtstage), ''arbeit'', ''privat'' oder ''familie'''
       required: false
       default: hjem
       selector:
@@ -94,10 +88,7 @@ termin_loeschen:
     response_variable: r
 termin_verschieben:
   alias: Termin verschieben
-  description: Verschiebt einen bestehenden Termin auf eine neue Zeit und/oder benennt
-    ihn um. Nutze dieses Werkzeug, wenn der Nutzer einen Termin verlegen, verschieben,
-    umbenennen oder die Uhrzeit ändern möchte. Dauer bleibt gleich, wenn kein neues
-    Ende angegeben ist.
+  description: Verschiebt einen bestehenden Termin auf eine neue Zeit und/oder benennt ihn um. Nutze dieses Werkzeug, wenn der Nutzer einen Termin verlegen, verschieben, umbenennen oder die Uhrzeit ändern möchte. Dauer bleibt gleich, wenn kein neues Ende angegeben ist.
   mode: parallel
   icon: mdi:calendar-edit
   fields:
@@ -121,8 +112,7 @@ termin_verschieben:
         datetime: {}
     neues_ende:
       name: Neues Ende
-      description: 'Optional: neue Endzeit, Format YYYY-MM-DD HH:MM:SS. Leer lassen
-        = Dauer bleibt gleich'
+      description: 'Optional: neue Endzeit, Format YYYY-MM-DD HH:MM:SS. Leer lassen = Dauer bleibt gleich'
       required: false
       selector:
         datetime: {}
@@ -134,7 +124,7 @@ termin_verschieben:
         text: {}
     kalender:
       name: Kalender
-      description: '''hjem'' (privat, Standard) oder ''arbeid'' (Arbeit)'
+      description: '''hjem'' (privat, Standard), ''arbeid'' (Arbeit), ''kalender'' (Geburtstage), ''arbeit'', ''privat'' oder ''familie'''
       required: false
       default: hjem
       selector:
