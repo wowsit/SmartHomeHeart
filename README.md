@@ -1,5 +1,7 @@
 # SmartHomeHeart
 
+[![CI](https://github.com/wowsit/SmartHomeHeart/actions/workflows/ci.yml/badge.svg)](https://github.com/wowsit/SmartHomeHeart/actions/workflows/ci.yml)
+
 Wandmontiertes Touch-Dashboard im Hochformat (Raspberry Pi 4, 27" FHD Touch, 1080×1920) für Home Assistant:
 Smarthome, Wetter, Kalender, Musik – eigene UI, HA macht die Logik.
 
