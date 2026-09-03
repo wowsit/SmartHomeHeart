@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { config } from '../config'
-import { useEntity, useHa } from '../ha/useHa'
+import { resolveHaUrl, useEntity, useHa } from '../ha/useHa'
 import { Icon } from './Icons'
 import { useNow } from '../hooks/useNow'
 
@@ -23,7 +23,7 @@ export function MediaPlayer({ large = false, compact = false }: { large?: boolea
   const dur = a.media_duration ?? 0
   const pct = dur ? Math.min(100, (pos / dur) * 100) : 0
   const call = (service: string, data: Record<string, any> = {}) => ha.callService('media_player', service, { entity_id: m.entity_id, ...data })
-  const art = a.entity_picture ? (a.entity_picture.startsWith('http') ? a.entity_picture : `${import.meta.env.VITE_HA_URL ?? ''}${a.entity_picture}`) : null
+  const art = a.entity_picture ? (a.entity_picture.startsWith('http') ? a.entity_picture : `${resolveHaUrl() ?? ''}${a.entity_picture}`) : null
 
   if (compact) {
     return (

@@ -28,6 +28,9 @@ http:
     - http://localhost:8080
 ```
 
+> **https / Mikrofon:** Der Sprachassistent braucht einen Secure Context. Der nginx auf dem Pi liefert das Dashboard deshalb zusätzlich unter `https://<pi>:8443` aus (selbstsigniertes Zertifikat aus `deploy/tls/make-cert.sh`, Browserwarnung einmal akzeptieren) und reicht `/api/` an Home Assistant weiter.
+
+
 `?mock=1` an die URL hängen erzwingt den Demo-Modus, `?kiosk=1` blendet den Mauszeiger aus.
 
 ## Entities anpassen

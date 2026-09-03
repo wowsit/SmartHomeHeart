@@ -192,9 +192,11 @@ docker run -d --name homeassistant --restart=unless-stopped --privileged --netwo
 # Dashboard – nginx liefert den fertigen Build aus ~/dashboard/dist aus
 mkdir -p ~/dashboard/dist
 # nginx.conf aus dem Repo (deploy/nginx.conf) nach ~/dashboard/nginx.conf kopieren
-docker run -d --name pi-dashboard --restart=unless-stopped -p 8080:80 \
-  -v /home/wowsit/dashboard/dist:/usr/share/nginx/html \
-  -v /home/wowsit/dashboard/nginx.conf:/etc/nginx/conf.d/default.conf \
+# Zertifikat für https einmalig erzeugen: bash deploy/tls/make-cert.sh ~/dashboard/tls
+docker run -d --name pi-dashboard --restart=unless-stopped -p 8080:80 -p 8443:443 \
+  -v /home/wowsit/dashboard/dist:/usr/share/nginx/html:ro \
+  -v /home/wowsit/dashboard/nginx.conf:/etc/nginx/conf.d/default.conf:ro \
+  -v /home/wowsit/dashboard/tls:/etc/nginx/tls:ro \
   nginx:alpine
 ```
 
@@ -212,7 +214,7 @@ cd ~/dashboard && cp -a dist dist.bak-$(date +%Y%m%d-%H%M%S) \
 
 Danach im Browser **hart neu laden** (Cmd+Shift+R), sonst bleibt das alte JS im Cache. Wichtig: `VITE_*` werden **beim Build** eingebrannt – bei neuem Token oder anderer URL neu bauen. `VITE_HA_URL=auto` ist Pflicht, damit derselbe Build vom Kiosk (`localhost`) und vom Mac (`192.168.178.151`) funktioniert.
 
-Prüfen: `http://192.168.178.151:8080` zeigt das Dashboard, `docker ps` zeigt `homeassistant` und `pi-dashboard` als `Up`. Fehlersuche: `docker logs --tail 50 pi-dashboard` – tauchen dort Anfragen wie `GET /auto/api/…` oder `GET /ws/api/websocket` auf, ist ein alter Build ohne `auto`-Unterstützung im Einsatz → neu bauen.
+Prüfen: `http://192.168.178.151:8080` zeigt das Dashboard, `https://192.168.178.151:8443` ebenfalls (selbstsigniert → Browserwarnung einmal akzeptieren; nur über https gibt der Browser das Mikrofon für den Sprachassistenten frei – nginx reicht dort `/api/` an HA weiter, siehe `deploy/nginx.conf`), `docker ps` zeigt `homeassistant` und `pi-dashboard` als `Up`. Fehlersuche: `docker logs --tail 50 pi-dashboard` – tauchen dort Anfragen wie `GET /auto/api/…` oder `GET /ws/api/websocket` auf, ist ein alter Build ohne `auto`-Unterstützung im Einsatz → neu bauen.
 
 **Alternative (Neuaufbau von null):** `deploy/docker-compose.yml` startet HA + Dashboard zusammen und baut das Dashboard auf dem Pi (`cd ~/SmartHomeHeart/deploy && cp ../.env.example .env && docker compose up -d --build`). Auf einem Pi 4 mit 2 GB dauert der Build lange; der obige Weg ist im Alltag schneller.
 
@@ -288,7 +290,7 @@ Auf dem Pi läuft Tailscale (1.102.x), Node `homehole` = `100.109.2.10`. Install
 Viktor hängt als Node **`viktor-ai`** im Tailnet (per Auth-Key aufgenommen) und erreicht:
 
 - Home Assistant: `http://100.109.2.10:8123` (eigener Long-Lived-Token `viktor`)
-- Dashboard: `http://100.109.2.10:8080`
+- Dashboard: `http://100.109.2.10:8080` bzw. `https://100.109.2.10:8443` (Mikrofon/Assist)
 - SSH als `wowsit`: Viktors öffentlicher Schlüssel steht in `~/.ssh/authorized_keys`. **Tailscale SSH ist auf dem Pi abgeschaltet** (`sudo tailscale set --ssh=false`), weil die Standard-ACL im „check“-Modus eine Browser-Bestätigung verlangt, die ein Headless-Client nicht leisten kann. Klassisches sshd über die Tailnet-IP funktioniert.
 
 Damit kann Viktor Builds einspielen, Container/Logs prüfen und HA-Konfiguration lesen. Zugriff entziehen: Node `viktor-ai` in der Tailscale-Admin-Konsole löschen und/oder Key aus `authorized_keys` entfernen. Die LAN-IP `192.168.178.151` ist von außen nicht erreichbar; sie ist per DHCP vergeben (feste IP in der Fritz!Box noch offen).

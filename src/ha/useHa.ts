@@ -3,15 +3,25 @@ import type { HaBackend, EntityMap, ConnState } from './types'
 import { MockBackend } from './mock'
 import { HaWsBackend } from './ws'
 
+/**
+ * Basis-URL von Home Assistant (ohne Slash am Ende) oder undefined (Demo-Modus).
+ * 'auto' = HA läuft auf demselben Host wie das Dashboard:
+ *  - http  → direkt `http://<host>:8123` (Pi-Kiosk über localhost, Mac im LAN über Pi-IP)
+ *  - https → gleiche Origin; nginx reicht `/api/` (REST + WebSocket) an HA weiter,
+ *            weil der Browser von einer https-Seite kein http/ws zu HA zulässt (Mixed Content).
+ */
+export function resolveHaUrl(): string | undefined {
+  const url = import.meta.env.VITE_HA_URL as string | undefined
+  if (url === 'auto') return location.protocol === 'https:' ? location.origin : `http://${location.hostname}:8123`
+  return url?.replace(/\/$/, '')
+}
+
 export function createBackend(): HaBackend {
   const params = new URLSearchParams(location.search)
-  let url = import.meta.env.VITE_HA_URL as string | undefined
+  const url = resolveHaUrl()
   const token = import.meta.env.VITE_HA_TOKEN as string | undefined
-  // 'auto' = HA läuft auf demselben Host wie das Dashboard (Port 8123).
-  // Funktioniert so vom Pi-Kiosk (localhost) und vom Mac im LAN (Pi-IP) mit demselben Build.
-  if (url === 'auto') url = `${location.protocol}//${location.hostname}:8123`
   if (params.get('mock') === '1' || !url || !token) return new MockBackend()
-  return new HaWsBackend(url.replace(/\/$/, ''), token)
+  return new HaWsBackend(url, token)
 }
 
 export const HaContext = createContext<HaBackend | null>(null)

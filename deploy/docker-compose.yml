@@ -23,3 +23,4 @@ services:
     restart: unless-stopped
     ports:
       - "8080:80"
+      - "8443:443"   # https (selbstsigniert) – für Mikrofon/Sprachassistent im Browser
