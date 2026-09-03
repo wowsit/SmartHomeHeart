@@ -58,7 +58,7 @@ export class AssistClient implements AssistLike {
     this.stopped = false
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
-    } catch (e) {
+    } catch {
       this.set({ phase: 'error', error: 'Kein Mikrofonzugriff (Browser braucht https oder localhost).' })
       this.stopped = true
       return

@@ -17,7 +17,7 @@ const NAV: { id: Page; label: string; icon: keyof typeof Icon }[] = [
 ]
 
 const PORTRAIT = config.orientation === 'portrait'
-export const STAGE = PORTRAIT ? { w: 1080, h: 1920 } : { w: 1920, h: 1080 }
+const STAGE = PORTRAIT ? { w: 1080, h: 1920 } : { w: 1920, h: 1080 }
 
 /** Skaliert die feste Bühne (1080×1920 hochkant bzw. 1920×1080 quer) auf jede Fenstergröße – auf dem 27"-FHD-Display = 1:1. */
 function useStageScale() {
@@ -102,14 +102,14 @@ function Screensaver({ onWake }: { onWake: () => void }) {
 }
 
 export default function App() {
-  const ha = useMemo(createBackend, [])
+  const ha = useMemo(() => createBackend(), [])
   const scale = useStageScale()
   const params = new URLSearchParams(location.search)
   const initial = (params.get('page') ?? (window as any).__PAGE__ ?? config.startPage) as Page
   const [page, setPage] = useState<Page>((NAV.some((n) => n.id === initial) || initial === 'calendar') ? initial : config.startPage)
   const idle = useIdle(config.screensaverAfter)
   const [woke, setWoke] = useState(false)
-  useEffect(() => { if (!idle) setWoke(false) }, [idle])
+  if (!idle && woke) setWoke(false) // Reset beim Aufwachen – State-Anpassung im Render statt Effekt
   const kiosk = params.get('kiosk') === '1'
 
   return (

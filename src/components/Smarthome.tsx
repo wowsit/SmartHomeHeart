@@ -61,8 +61,9 @@ export function ClimateTile({ e }: { e: HaEntity }) {
   const step = e.attributes.target_temp_step ?? 0.5
   const target = e.attributes.temperature as number
   const [local, setLocal] = useState(target)
+  const [seenTarget, setSeenTarget] = useState(target)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => setLocal(target), [target])
+  if (target !== seenTarget) { setSeenTarget(target); setLocal(target) } // HA-Wert übernehmen, sobald er sich ändert
   const change = (d: number) => {
     const v = Math.round(Math.min(e.attributes.max_temp ?? 30, Math.max(e.attributes.min_temp ?? 7, local + d)) * 10) / 10
     setLocal(v)

@@ -1,10 +1,4 @@
-import { useEffect, useState } from 'react'
-
-export function useNow(intervalMs = 1000) {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => { const t = setInterval(() => setNow(new Date()), intervalMs); return () => clearInterval(t) }, [intervalMs])
-  return now
-}
+import { useNow } from '../hooks/useNow'
 
 export function Clock({ big = false, compact = false }: { big?: boolean; compact?: boolean }) {
   const now = useNow()

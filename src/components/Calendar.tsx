@@ -1,18 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { config } from '../config'
-import { useHa } from '../ha/useHa'
 import type { CalendarEvent } from '../ha/types'
 import { Clock } from './Clock'
+import { dayKey, useCalendar } from './calendarData'
 import { Icon } from './Icons'
 import { AddEventSheet } from './AddEvent'
 
-export const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 const calColor = (entity: string) => config.calendars.find((c) => c.entity === entity)?.color ?? 'grey'
-const entityIds = config.calendars.map((c) => c.entity)
-
-/** Wird nach dem Anlegen eines Termins gefeuert, damit alle Ansichten neu laden. */
-export const calendarBus = new EventTarget()
 
 /** Alle Tage (als Key), die ein Termin belegt – mehrtägige Termine erscheinen an jedem Tag. */
 function eventDays(ev: CalendarEvent): string[] {
@@ -23,21 +18,6 @@ function eventDays(ev: CalendarEvent): string[] {
   const last = new Date(end); if (ev.allDay || end.getHours() + end.getMinutes() > 0) last.setSeconds(-1) // Ende ist exklusiv
   while (d <= last && days.length < 62) { days.push(dayKey(d)); d.setDate(d.getDate() + 1) }
   return days.length ? days : [dayKey(start)]
-}
-
-export function useCalendar(start: Date, end: Date) {
-  const ha = useHa()
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const s = start.getTime(), e = end.getTime()
-  useEffect(() => {
-    let alive = true
-    const load = () => ha.getCalendarEvents(entityIds, new Date(s), new Date(e)).then((ev) => alive && setEvents(ev)).catch(console.error)
-    load()
-    const t = setInterval(load, 5 * 60 * 1000)
-    calendarBus.addEventListener('changed', load)
-    return () => { alive = false; clearInterval(t); calendarBus.removeEventListener('changed', load) }
-  }, [ha, s, e])
-  return events
 }
 
 function useToday() {
@@ -65,10 +45,12 @@ function useMonth(monthOffset: number) {
   const now = new Date()
   const first = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1)
   const gridStart = new Date(first); gridStart.setDate(1 - ((first.getDay() + 6) % 7)) // Montag vor dem 1.
+  const firstMs = first.getTime(), gridStartMs = gridStart.getTime() // primitive Deps, damit das Memo nur beim Monatswechsel neu rechnet
   const cells = useMemo(() => {
-    const rows = Math.ceil(((first.getDay() + 6) % 7 + new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()) / 7)
-    return Array.from({ length: rows * 7 }, (_, i) => { const d = new Date(gridStart); d.setDate(gridStart.getDate() + i); return d })
-  }, [first.getTime()]) // eslint-disable-line react-hooks/exhaustive-deps
+    const f = new Date(firstMs), g = new Date(gridStartMs)
+    const rows = Math.ceil(((f.getDay() + 6) % 7 + new Date(f.getFullYear(), f.getMonth() + 1, 0).getDate()) / 7)
+    return Array.from({ length: rows * 7 }, (_, i) => { const d = new Date(g); d.setDate(g.getDate() + i); return d })
+  }, [firstMs, gridStartMs])
   const gridEnd = new Date(cells[cells.length - 1]); gridEnd.setDate(gridEnd.getDate() + 1)
   const events = useCalendar(gridStart, gridEnd)
   const byDay = useMemo(() => {

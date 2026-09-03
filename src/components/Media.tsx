@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { config } from '../config'
 import { useEntity, useHa } from '../ha/useHa'
 import { Icon } from './Icons'
-import { useNow } from './Clock'
+import { useNow } from '../hooks/useNow'
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
