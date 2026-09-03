@@ -1,6 +1,6 @@
 # Ist-Stand `homehole` – automatisch exportiert
 
-> Erzeugt am **2026-09-03 18:26 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
+> Erzeugt am **2026-09-03 18:27 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
 > neu erzeugt (`deploy/export-state.sh`). Geheimnisse (Tokens, Passwörter, API-Keys, E-Mail-Adressen) sind maskiert.
 > Rohdateien liegen in [`docs/ist-stand/`](ist-stand/). Architektur & Aufbau-Anleitung: [`AUFBAU.md`](AUFBAU.md), Sprachassistent: [`../assistant/README.md`](../assistant/README.md).
 
@@ -11,7 +11,7 @@
 | Host | HomeHole |
 | OS / Kernel | Debian GNU/Linux 13 (trixie) / 6.18.34+rpt-rpi-v8 |
 | Modell | Raspberry Pi 4 Model B Rev 1.5 |
-| Uptime | up 1 hour, 42 minutes |
+| Uptime | up 1 hour, 43 minutes |
 | RAM | 1.2Gi belegt von 1.8Gi |
 | Disk / | 16G belegt von 29G (58%) |
 | Docker | 29.7.2, build a7dcaa6 |
@@ -39,7 +39,7 @@
 
 | Was | Wert |
 |---|---|
-| Deployter Build | 7a6288a (main) deployed 2026-09-03 16:23 UTC |
+| Deployter Build | e7694d3 (main) deployed 2026-09-03 18:23 CEST |
 | Assets | index-n93kYJEE.js, index-cVlT78Jj.css |
 | dist geändert | 2026-09-03 18:21 |
 | HA-URL-Modus | auto (location.hostname:8123 / bei https same-origin) |
@@ -232,6 +232,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 2026-09-03 18:24:16.249 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 2026-09-03 18:24:40.907 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 2026-09-03 18:25:36.665 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:27:21.149 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 ```
 
 ## Sprachassistent
