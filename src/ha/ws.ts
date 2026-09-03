@@ -2,8 +2,9 @@ import {
   createConnection, createLongLivedTokenAuth, subscribeEntities, callService as haCallService,
   type Connection, type HassEntities,
 } from 'home-assistant-js-websocket'
-import type { NewCalendarEvent, HaBackend, EntityMap, ConnState, ForecastDay, CalendarEvent, AssistLike } from './types'
+import type { NewCalendarEvent, HaBackend, EntityMap, ConnState, ForecastDay, CalendarEvent, AssistLike, AssistState } from './types'
 import { AssistClient } from './assist'
+import { watchAssistRuns } from './assistRuns'
 import { config } from '../config'
 
 /** Echte Anbindung an Home Assistant per WebSocket (Live-Updates) + REST (Kalender). */
@@ -122,5 +123,15 @@ export class HaWsBackend implements HaBackend {
   async getAssist(): Promise<AssistLike | null> {
     const conn = await this.connPromise
     return this.assist ?? (this.assist = new AssistClient(conn, this.url, config.assistPipeline || undefined))
+  }
+
+  /** Sprachbefehle anderer Geräte (Handy-App, Satelliten) als Live-Untertitel – eigene Läufe des Dashboards werden ausgeblendet. */
+  subscribeAssistRuns(cb: (s: AssistState) => void) {
+    let stop: (() => void) | undefined, alive = true
+    this.connPromise.then((conn) => {
+      if (!alive) return
+      stop = watchAssistRuns(conn, cb, { ignoreOwn: () => this.assist?.active ?? false })
+    }).catch(console.error)
+    return () => { alive = false; stop?.() }
   }
 }

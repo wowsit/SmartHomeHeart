@@ -170,6 +170,10 @@ export class MockBackend implements HaBackend {
 
   private assist?: MockAssist
   async getAssist(): Promise<AssistLike | null> { return this.assist ?? (this.assist = new MockAssist()) }
+  subscribeAssistRuns(cb: (s: AssistState) => void) {
+    (window as any).__assistRemoteDemo = (p: AssistState) => cb(p) // Vorschau-Hook: __assistRemoteDemo({phase:'speaking', heard:'…', answer:'…'})
+    return () => {}
+  }
 }
 
 /** Demo-Assistent: spielt beim Antippen einen Beispieldialog ab (kein Mikro nötig). */

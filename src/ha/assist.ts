@@ -50,6 +50,8 @@ export class AssistClient implements AssistLike {
   }
 
   subscribe(cb: Listener) { this.listeners.add(cb); cb(this.state); return () => { this.listeners.delete(cb) } }
+  /** Läuft gerade ein eigener Sprachbefehl (Zuhören/Denken/Sprechen)? */
+  get active() { return this.state.phase !== 'idle' }
   private set(patch: Partial<AssistState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach((l) => l(this.state)) }
 
   /** Mikro öffnen und Dauerschleife mit Wake Word starten. Muss aus einer Nutzeraktion oder auf Kiosk (Autoplay erlaubt) kommen. */
@@ -106,8 +108,8 @@ export class AssistClient implements AssistLike {
     if (this.stopped || this.running) return
     this.running = true
     this.handlerId = null
-    if (startStage === 'stt') this.set({ phase: 'listening', heard: undefined, answer: undefined })
-    else this.set({ phase: 'idle', heard: undefined, answer: undefined })
+    if (startStage === 'stt') this.set({ phase: 'listening', heard: undefined, answer: undefined, source: 'local' })
+    else this.set({ phase: 'idle', heard: undefined, answer: undefined, source: 'local' })
     try {
       this.unsub = await this.conn.subscribeMessage((msg: any) => this.onEvent(msg), {
         type: 'assist_pipeline/run',
@@ -147,8 +149,14 @@ export class AssistClient implements AssistLike {
         this.handlerId = null
         this.set({ phase: 'thinking', heard: d.stt_output?.text || '…' })
         break
+      case 'intent-progress': {
+        // Claude streamt die Antwort Wort für Wort → Live-Untertitel
+        const delta = d.chat_log_delta?.content
+        if (typeof delta === 'string' && delta) this.set({ answer: (this.state.answer ?? '') + delta })
+        break
+      }
       case 'intent-end':
-        this.set({ answer: d.intent_output?.response?.speech?.plain?.speech ?? '' })
+        this.set({ answer: d.intent_output?.response?.speech?.plain?.speech ?? this.state.answer ?? '' })
         break
       case 'tts-end': {
         const url: string | undefined = d.tts_output?.url

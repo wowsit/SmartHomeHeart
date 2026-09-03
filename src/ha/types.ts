@@ -25,7 +25,8 @@ export interface CalendarEvent {
 export type NewCalendarEvent = Omit<CalendarEvent, 'calendar'> & { description?: string }
 
 export type AssistPhase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error'
-export interface AssistState { phase: AssistPhase; heard?: string; answer?: string; error?: string }
+/** `source`: 'local' = Mikro des Dashboards, 'remote' = anderes Gerät (Handy-App, Satellit) – aus den Pipeline-Läufen in HA. */
+export interface AssistState { phase: AssistPhase; heard?: string; answer?: string; error?: string; source?: 'local' | 'remote' }
 /** Sprachassistent (Wake Word → STT → LLM → TTS). */
 export interface AssistLike {
   subscribe(cb: (s: AssistState) => void): () => void
@@ -51,4 +52,6 @@ export interface HaBackend {
   subscribeCalendarChanges(cb: () => void): () => void
   /** Sprachassistent; null wenn nicht verfügbar */
   getAssist(): Promise<AssistLike | null>
+  /** Live-Untertitel für Sprachbefehle von *anderen* Geräten (Handy-App, Satelliten): beobachtet die Assist-Pipeline-Läufe in HA. */
+  subscribeAssistRuns(cb: (s: AssistState) => void): () => void
 }

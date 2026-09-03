@@ -386,17 +386,20 @@ h3 { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transfo
 .assist.listening .assist-btn { background: var(--amber-500); color: var(--amber-900); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 hsla(37, 85%, 52%, .55); } 50% { box-shadow: 0 0 0 26px hsla(37, 85%, 52%, 0); } }
 
-.assist-bubble { position: relative; background: var(--surface); color: var(--text); border-radius: 32px; border-bottom-right-radius: 10px; padding: var(--s-5) var(--s-6); box-shadow: var(--elev-2); min-width: 380px; max-width: 860px; animation: bubble .35s cubic-bezier(.2,.9,.3,1.2); display: flex; flex-direction: column; gap: var(--s-3); }
-.assist-bubble::after { content: ''; position: absolute; right: -6px; bottom: -14px; width: 28px; height: 28px; background: var(--surface); clip-path: polygon(0 0, 100% 0, 100% 100%); border-bottom-right-radius: 4px; }
-@keyframes bubble { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
-.assist-name { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--amber-700); }
-.assist-status { display: flex; align-items: center; gap: var(--s-3); font-size: var(--t-xl); color: var(--text-2); }
-.assist-heard { font-size: var(--t-xl); color: var(--muted); font-style: italic; }
-.assist-answer { font-size: var(--t-2xl); font-weight: 500; line-height: 1.35; letter-spacing: -0.01em; }
-.assist-error { font-size: var(--t-base); color: var(--red-500); }
-
+/* Live-Untertitel: mittig, riesig – lesbar aus 3 m */
+.captions { position: absolute; inset: 0; z-index: 21; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: var(--s-6); padding: var(--s-8) 72px; pointer-events: none; color: var(--g-50); animation: captions .3s cubic-bezier(.2,.9,.3,1.1); }
+.captions-name { font-size: var(--t-lg); font-weight: 700; text-transform: uppercase; letter-spacing: .18em; color: var(--amber-500); }
+.captions-status { display: flex; align-items: center; gap: var(--s-5); font-size: var(--t-4xl); font-weight: 500; color: var(--g-200); }
+.captions-heard { color: var(--g-400); font-weight: 400; line-height: 1.25; letter-spacing: -0.01em; text-wrap: balance; }
+.captions-answer { font-weight: 700; line-height: 1.12; letter-spacing: -0.025em; text-wrap: balance; max-width: 100%; word-wrap: break-word; }
+.captions-error { font-size: var(--t-4xl); font-weight: 600; color: hsl(4, 80%, 68%); }
+.caret { display: inline-block; width: .08em; height: .9em; margin-left: .08em; vertical-align: -0.08em; background: var(--amber-500); animation: blink 1s steps(1) infinite; }
+@keyframes captions { from { opacity: 0; transform: translateY(24px) scale(.97) } to { opacity: 1; transform: none } }
+.assist-dim.on { background: hsla(30, 18%, 8%, .9); backdrop-filter: blur(10px); }
 .waves { display: inline-flex; align-items: center; gap: 4px; height: 28px; }
 .waves i { width: 5px; height: 10px; border-radius: 3px; background: var(--amber-500); animation: wave 1s ease-in-out infinite; }
+.waves.big { height: 56px; gap: 8px; } .waves.big i { width: 10px; border-radius: 5px; animation-name: wave-big; }
+@keyframes wave-big { 0%,100% { height: 16px } 50% { height: 54px } }
 .waves i:nth-child(2) { animation-delay: .12s } .waves i:nth-child(3) { animation-delay: .24s } .waves i:nth-child(4) { animation-delay: .36s } .waves i:nth-child(5) { animation-delay: .48s }
 @keyframes wave { 0%,100% { height: 8px } 50% { height: 26px } }
 .dots { display: inline-flex; gap: 6px; padding: 6px 0; }

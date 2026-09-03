@@ -12,7 +12,8 @@ import { Icon } from './Icons'
 export function Assistant() {
   const ha = useHa()
   const [assist, setAssist] = useState<AssistLike | null>(null)
-  const [st, setSt] = useState<AssistState>({ phase: 'idle' })
+  const [own, setOwn] = useState<AssistState>({ phase: 'idle' })       // Mikro des Dashboards
+  const [remote, setRemote] = useState<AssistState>({ phase: 'idle' }) // Handy-App / Satelliten (aus HA)
   const [armed, setArmed] = useState(false) // Mikro offen, lauscht aufs Wake Word
 
   useEffect(() => {
@@ -20,45 +21,64 @@ export function Assistant() {
     ha.getAssist().then((a) => {
       if (!a) return
       setAssist(a)
-      unsub = a.subscribe(setSt)
+      unsub = a.subscribe(setOwn)
       if (config.assistAutoStart) a.start().then(() => setArmed(true)).catch(() => {})
     })
     return () => unsub()
   }, [ha])
+  useEffect(() => ha.subscribeAssistRuns(setRemote), [ha])
 
+  // Eigener Lauf hat Vorrang; sonst das, was ein anderes Gerät gerade macht.
+  const st = own.phase !== 'idle' ? own : remote
   const active = st.phase !== 'idle'
+  const ownActive = own.phase !== 'idle'
 
   const onTap = async () => {
     if (!assist) return
-    if (active) { assist.stop(); setArmed(false); return }
+    if (ownActive) { assist.stop(); setArmed(false); return }
     await assist.listenNow()
     setArmed(true)
   }
 
   return (
     <>
-      <div className={`assist-dim ${active ? 'on' : ''}`} onPointerDown={() => assist?.stop()} />
-      <div className={`assist ${active ? 'on' : ''} ${st.phase}`}>
-        {active && (
-          <div className="assist-bubble">
-            <div className="assist-name">{config.assistName}</div>
-            {st.phase === 'listening' && <div className="assist-status"><Waves /> Ich höre zu …</div>}
-            {st.heard && <div className="assist-heard">„{st.heard}“</div>}
-            {st.phase === 'thinking' && <div className="assist-status"><Dots /></div>}
-            {st.answer && <div className="assist-answer">{st.answer}</div>}
-            {st.phase === 'error' && <div className="assist-error">{st.error}</div>}
-          </div>
-        )}
+      <div className={`assist-dim ${active ? 'on' : ''}`} onPointerDown={() => { if (ownActive) assist?.stop() }} />
+      {active && <Captions st={st} />}
+      <div className={`assist ${ownActive ? 'on' : ''} ${own.phase}`}>
         <button className={`assist-btn ${armed ? 'armed' : ''}`} onClick={onTap} aria-label="Sprachassistent">
-          {active ? <Icon.close size={34} /> : <Icon.mic size={34} />}
+          {ownActive ? <Icon.close size={34} /> : <Icon.mic size={34} />}
         </button>
       </div>
     </>
   )
 }
 
-function Waves() {
-  return <span className="waves"><i /><i /><i /><i /><i /></span>
+/** Schriftgröße nach Textlänge: kurze Antworten riesig, lange noch lesbar (Bühne 1080 px breit). */
+function fontFor(text: string, base: number) {
+  const n = text.length
+  if (n <= 40) return base
+  if (n <= 90) return Math.round(base * 0.8)
+  if (n <= 160) return Math.round(base * 0.64)
+  if (n <= 260) return Math.round(base * 0.5)
+  return Math.round(base * 0.4)
+}
+
+/** Live-Untertitel in der Bildschirmmitte: gehörter Satz, darunter die (gestreamte) Antwort – sehr groß. */
+function Captions({ st }: { st: AssistState }) {
+  return (
+    <div className={`captions ${st.phase}`} aria-live="polite">
+      <div className="captions-name">{config.assistName}{st.source === 'remote' ? ' · Handy' : ''}</div>
+      {st.phase === 'listening' && <div className="captions-status"><Waves big /> Ich höre zu …</div>}
+      {st.heard && <div className="captions-heard" style={{ fontSize: fontFor(st.heard, 64) }}>„{st.heard}“</div>}
+      {st.phase === 'thinking' && !st.answer && <div className="captions-status"><Dots /></div>}
+      {st.answer && <div className="captions-answer" style={{ fontSize: fontFor(st.answer, 104) }}>{st.answer}{st.phase === 'thinking' && <span className="caret" />}</div>}
+      {st.phase === 'error' && <div className="captions-error">{st.error}</div>}
+    </div>
+  )
+}
+
+function Waves({ big }: { big?: boolean }) {
+  return <span className={`waves ${big ? 'big' : ''}`}><i /><i /><i /><i /><i /></span>
 }
 function Dots() {
   return <span className="dots"><i /><i /><i /></span>
