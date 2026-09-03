@@ -24,6 +24,18 @@ export interface CalendarEvent {
 
 export type NewCalendarEvent = Omit<CalendarEvent, 'calendar'> & { description?: string }
 
+export type AssistPhase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error'
+export interface AssistState { phase: AssistPhase; heard?: string; answer?: string; error?: string }
+/** Sprachassistent (Wake Word → STT → LLM → TTS). */
+export interface AssistLike {
+  subscribe(cb: (s: AssistState) => void): () => void
+  /** Mikro öffnen und auf das Wake Word lauschen */
+  start(): Promise<void>
+  stop(): void
+  /** Ohne Wake Word direkt zuhören (Antippen) */
+  listenNow(): Promise<void>
+}
+
 export type ConnState = 'connecting' | 'connected' | 'disconnected' | 'demo'
 
 export interface HaBackend {
@@ -35,4 +47,6 @@ export interface HaBackend {
   getCalendarEvents(entityIds: string[], start: Date, end: Date): Promise<CalendarEvent[]>
   /** Termin anlegen (HA-Service calendar.create_event) */
   createCalendarEvent(entityId: string, ev: NewCalendarEvent): Promise<void>
+  /** Sprachassistent; null wenn nicht verfügbar */
+  getAssist(): Promise<AssistLike | null>
 }

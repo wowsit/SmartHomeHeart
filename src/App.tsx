@@ -7,6 +7,7 @@ import { CalendarPage, CalendarWidget } from './components/Calendar'
 import { MediaPlayer } from './components/Media'
 import { LightsWidget, RoomSummary, SmarthomePage } from './components/Smarthome'
 import { Icon } from './components/Icons'
+import { Assistant } from './components/Assistant'
 
 type Page = 'home' | 'smarthome' | 'calendar' | 'music'
 const NAV: { id: Page; label: string; icon: keyof typeof Icon }[] = [
@@ -130,6 +131,7 @@ export default function App() {
           {page === 'calendar' && <CalendarPage onBack={() => setPage('home')} />}
           {page === 'music' && <div className="page music"><MediaPlayer large /></div>}
         </main>
+        <Assistant />
         {idle && !woke && <Screensaver onWake={() => { setWoke(true); setPage(config.startPage) }} />}
       </div>
     </HaContext.Provider>

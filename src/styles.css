@@ -372,3 +372,34 @@ h3 { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transfo
 .cta:disabled { opacity: .35; }
 .error { color: var(--red-500); font-size: var(--t-base); }
 .back { display: flex; align-items: center; gap: var(--s-2); height: var(--touch); padding: 0 var(--s-4); border-radius: 999px; background: var(--surface-2); color: var(--text-2); font-size: var(--t-base); font-weight: 500; }
+
+/* ===== Sprachassistent „Haus“ ===== */
+.assist-dim { position: absolute; inset: 0; background: hsla(30, 18%, 8%, 0); pointer-events: none; transition: background .5s ease; z-index: 20; }
+.assist-dim.on { background: hsla(30, 18%, 8%, .78); pointer-events: auto; backdrop-filter: blur(6px); }
+.assist { position: absolute; right: var(--s-6); bottom: var(--s-4); display: flex; flex-direction: column; align-items: flex-end; gap: var(--s-5); z-index: 21; max-width: 860px; }
+.stage.landscape .assist { bottom: var(--s-6); }
+.stage.portrait .nav { padding-right: 140px; }
+.assist-btn { position: relative; width: 76px; height: 76px; border-radius: 50%; background: var(--surface); color: var(--text); box-shadow: var(--elev-1); display: flex; align-items: center; justify-content: center; transition: transform .15s, background .2s, color .2s; }
+.assist-btn:active { transform: scale(.94); }
+.assist-btn.armed::after { content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--green-500); right: 6px; top: 6px; box-shadow: 0 0 0 3px var(--surface); }
+.assist.on .assist-btn { background: var(--g-800); color: var(--g-50); }
+.assist.listening .assist-btn { background: var(--amber-500); color: var(--amber-900); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 hsla(37, 85%, 52%, .55); } 50% { box-shadow: 0 0 0 26px hsla(37, 85%, 52%, 0); } }
+
+.assist-bubble { position: relative; background: var(--surface); color: var(--text); border-radius: 32px; border-bottom-right-radius: 10px; padding: var(--s-5) var(--s-6); box-shadow: var(--elev-2); min-width: 380px; max-width: 860px; animation: bubble .35s cubic-bezier(.2,.9,.3,1.2); display: flex; flex-direction: column; gap: var(--s-3); }
+.assist-bubble::after { content: ''; position: absolute; right: -6px; bottom: -14px; width: 28px; height: 28px; background: var(--surface); clip-path: polygon(0 0, 100% 0, 100% 100%); border-bottom-right-radius: 4px; }
+@keyframes bubble { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+.assist-name { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--amber-700); }
+.assist-status { display: flex; align-items: center; gap: var(--s-3); font-size: var(--t-xl); color: var(--text-2); }
+.assist-heard { font-size: var(--t-xl); color: var(--muted); font-style: italic; }
+.assist-answer { font-size: var(--t-2xl); font-weight: 500; line-height: 1.35; letter-spacing: -0.01em; }
+.assist-error { font-size: var(--t-base); color: var(--red-500); }
+
+.waves { display: inline-flex; align-items: center; gap: 4px; height: 28px; }
+.waves i { width: 5px; height: 10px; border-radius: 3px; background: var(--amber-500); animation: wave 1s ease-in-out infinite; }
+.waves i:nth-child(2) { animation-delay: .12s } .waves i:nth-child(3) { animation-delay: .24s } .waves i:nth-child(4) { animation-delay: .36s } .waves i:nth-child(5) { animation-delay: .48s }
+@keyframes wave { 0%,100% { height: 8px } 50% { height: 26px } }
+.dots { display: inline-flex; gap: 6px; padding: 6px 0; }
+.dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--g-400); animation: blink 1.2s infinite; }
+.dots i:nth-child(2) { animation-delay: .2s } .dots i:nth-child(3) { animation-delay: .4s }
+@keyframes blink { 0%,80%,100% { opacity: .25 } 40% { opacity: 1 } }
