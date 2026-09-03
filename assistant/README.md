@@ -25,10 +25,10 @@ Freigegebene Entitäten: `calendar.hjem` (privat), `calendar.arbeid` (Arbeit), `
 | Ordner | Was | Port (nur localhost) |
 |---|---|---|
 | `calhelper/` | Mini-HTTP-Dienst (Python + `caldav`): `/find`, `/delete`, `/move` gegen iCloud CalDAV. Nötig, weil HAs CalDAV-Integration nur Termine anlegen kann. Fuzzy-Titelsuche, fasst Serientermine nicht an. | 10400 |
-| `groq_stt/` | Wyoming-STT-Server, der das Audio als WAV an Groq schickt. Ersetzt das lokale `tiny`-Whisper (Pi 4 mit 2 GB schafft nichts Besseres). Setzt einen eigenen User-Agent, sonst blockt Cloudflare (403 / error 1010). | 10301 |
+| `groq_stt/` | Wyoming-STT-Server, der das Audio als WAV an Groq schickt. Mit `DEBUG_SAVE=1` (so läuft er auf dem Pi) bleibt die letzte Aufnahme unter `/tmp/last.wav` im Container (`docker cp groq_stt:/tmp/last.wav .`). Ersetzt das lokale `tiny`-Whisper (Pi 4 mit 2 GB schafft nichts Besseres). Setzt einen eigenen User-Agent, sonst blockt Cloudflare (403 / error 1010). | 10301 |
 | `homeassistant/` | `scripts.yaml` (die drei Claude-Werkzeuge), `rest_command.yaml` (für configuration.yaml), `claude_prompt.txt` (System-Prompt der Anthropic-Integration). | – |
 
-Der alte Container `whisper` (`rhasspy/wyoming-whisper`, tiny-int8, Port 10300) läuft noch als Fallback und kann gestoppt werden, sobald Groq sich bewährt hat (spart ~500 MB RAM).
+Der alte Container `whisper` (`rhasspy/wyoming-whisper`, tiny-int8, Port 10300) ist gestoppt (Exit 137 = OOM) und dient nur noch als Fallback; zusätzlich läuft `openwakeword` (`rhasspy/wyoming-openwakeword`, 127.0.0.1:10500, eigene Modelle in `~/openwakeword/custom`) und kann gestoppt werden, sobald Groq sich bewährt hat (spart ~500 MB RAM).
 
 ## Aufsetzen (neu / nach Pi-Neuinstallation)
 

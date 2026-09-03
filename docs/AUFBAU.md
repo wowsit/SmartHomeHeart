@@ -1,8 +1,10 @@
 # SmartHomeHeart – Aufbau-Dokumentation
 
-Stand: 3. September 2026 · Repository `wowsit/SmartHomeHeart` · main = `4071f54` (PR #3)
+Stand: 3. September 2026 (abends) · Repository `wowsit/SmartHomeHeart` · main = `7d67fa9` (PR #8)
 
-Diese Dokumentation beschreibt vollständig, was bisher gebaut wurde und wie das Projekt von null wieder aufgebaut wird: Hardware, GitHub, Entwicklung am Laptop, Raspberry Pi, Home Assistant, Fernzugriff. Der vollständige Quellcode steht im Anhang; die Datei liegt zusätzlich im Repo unter `docs/AUFBAU.md`.
+> **Wichtig:** Kapitel 6.3, 8 und 9 beschreiben den **tatsächlichen** Stand auf dem Pi `homehole` (per SSH geprüft am 3.9.2026). Der Pi nutzt für das Dashboard **kein** `docker compose`, sondern einen nginx-Container mit gemountetem `dist/`-Ordner; Home Assistant läuft als eigener `docker run`-Container.
+
+Diese Dokumentation beschreibt vollständig, was bisher gebaut wurde und wie das Projekt von null wieder aufgebaut wird: Hardware, GitHub, Entwicklung am Laptop, Raspberry Pi, Home Assistant, Fernzugriff. Der Quellcode liegt im Repo; diese Datei unter `docs/AUFBAU.md`, der Sprachassistent ist in `assistant/README.md` beschrieben.
 
 ## 1. Was gebaut wurde
 
@@ -16,7 +18,8 @@ Diese Dokumentation beschreibt vollständig, was bisher gebaut wurde und wie das
 | Musik | HA `media_player.*` (YouTube Music über HA-Integration, noch offen) |
 | Auslieferung | Docker Compose: HA (`:8123`) + nginx-Container mit Dashboard (`:8080`); Chromium-Kiosk auf dem Pi |
 | Demo-Modus | Ohne Token laufen simulierte Geräte (`src/ha/mock.ts`), `?mock=1` erzwingt ihn |
-| Fernzugriff | Tailscale-Tailnet; HA-Host `homehole` = `100.109.2.10`, Viktor-Sandbox als Node `viktor-sandbox` |
+| Fernzugriff | Tailscale-Tailnet; Pi `homehole` = `100.109.2.10` (LAN `192.168.178.151`), Viktor als Node `viktor-ai` mit SSH-Key für Benutzer `wowsit` |
+| Sprachassistent | HA Assist-Pipeline „Haus (Claude)“: Wyoming-STT über Groq (`groq_stt`), CalDAV-Helfer (`calhelper`), openWakeWord; Details in `assistant/README.md` |
 
 ### Merge-Historie
 
@@ -27,6 +30,11 @@ Diese Dokumentation beschreibt vollständig, was bisher gebaut wurde und wie das
 | – | Light-Theme auf Wandfarbe `#D8CDC1`, UI entrümpelt |
 | #2 | Kalender: Monatsansicht, Farben pro Kalender, CalDAV/iCloud-Anleitung |
 | #3 | Übersicht als Always-on-Startseite: kompakter Kalender als Mittelpunkt, 4-Lichter-Widget, Termin-anlegen-Sheet |
+| #4 | Diese Aufbau-Dokumentation |
+| #5 | Echte HA-Entities (`weather.forecast_home`, `calendar.hjem`, `calendar.arbeid`), Termine als Chips im Tageskästchen, Tag-Detail-Sheet |
+| #6 | `assistant/`: Sprachassistent „Haus“ – calhelper, groq_stt, HA-Skripte, Claude-Prompt |
+| #7 | `VITE_HA_URL=auto`: ein Build für Kiosk (localhost) und Browser im LAN; CORS-Hinweis für HA ≥ 2026 |
+| #8 | Sprachchat im Dashboard: Wake Word → Sprechblase, Browser-Mikro streamt in die HA-Assist-Pipeline |
 
 ## 2. Architektur
 
@@ -36,12 +44,17 @@ Diese Dokumentation beschreibt vollständig, was bisher gebaut wurde und wie das
 │  Chromium --kiosk http://localhost:8080/?kiosk=1   (27" Touch, hochkant)           │
 │         │ HTTP                                                                     │
 │         ▼                                                                          │
-│  [Container pi-dashboard]  nginx :8080  → statisches Vite-Build (dist/)            │
+│  [Container pi-dashboard]  nginx :8080  → ~/dashboard/dist (Vite-Build, gemountet) │
 │         │ WebSocket /api/websocket  +  REST /api/calendars/…                       │
 │         ▼                                                                          │
-│  [Container homeassistant] :8123  (network_mode: host)                             │
+│  [Container homeassistant] :8123  (network_mode: host, ~/homeassistant = /config)  │
 │         ├─ CalDAV  → https://caldav.icloud.com   (Apple-Kalender)                  │
 │         ├─ Met.no  → Wetter                                                        │
+│         ├─ Assist-Pipeline „Haus (Claude)“                                         │
+│         │     ├─ [groq_stt]     Wyoming-STT  127.0.0.1:10301 → Groq Whisper        │
+│         │     ├─ [calhelper]    CalDAV löschen/verschieben  127.0.0.1:10400        │
+│         │     ├─ [openwakeword] Wake Word     127.0.0.1:10500                      │
+│         │     └─ [whisper]      lokales Fallback-STT (gestoppt)                    │
 │         └─ Zigbee/WLAN/… → Lichter, Schalter, Klima, Szenen, Media-Player          │
 │                                                                                    │
 │  tailscaled (Node „homehole“, 100.109.2.10) ─── Tailnet ─── Viktor-Sandbox        │
@@ -128,7 +141,7 @@ SINGLEFILE=1 npx vite build --outDir dist-single   # eine einzelne index.html (V
 Mit echter HA-Instanz `.env` anlegen (aus `.env.example`):
 
 ```ini
-VITE_HA_URL=http://homeassistant.local:8123
+VITE_HA_URL=http://192.168.178.151:8123   # oder http://100.109.2.10:8123 über Tailscale
 VITE_HA_TOKEN=<Long-Lived-Token>
 ```
 
@@ -152,7 +165,7 @@ URL-Parameter: `?mock=1` Demo erzwingen · `?kiosk=1` Mauszeiger aus · `?page=c
 
 ### 6.1 Betriebssystem
 
-1. **Raspberry Pi Imager** → Raspberry Pi OS (64-bit) **mit Desktop** (Bookworm).
+1. **Raspberry Pi Imager** → Raspberry Pi OS (64-bit) **mit Desktop**. Auf `homehole` läuft aktuell Debian 13 (trixie), Kernel 6.18, aarch64.
 2. Im Imager unter „Einstellungen“: Hostname `homehole`, Benutzer anlegen, WLAN/LAN, **SSH aktivieren**, Zeitzone `Europe/Berlin`.
 3. Booten, per SSH verbinden: `ssh <user>@homehole.local`.
 4. `sudo apt update && sudo apt full-upgrade -y && sudo reboot`
@@ -166,19 +179,44 @@ newgrp docker          # oder neu einloggen
 docker --version && docker compose version
 ```
 
-### 6.3 Projekt holen und starten
+### 6.3 Home Assistant und Dashboard starten
+
+**So läuft es auf `homehole` (Ist-Stand):**
 
 ```bash
-git clone https://github.com/wowsit/SmartHomeHeart.git ~/SmartHomeHeart
-cd ~/SmartHomeHeart/deploy
-cp ../.env.example .env
-nano .env              # VITE_HA_URL=http://localhost:8123  VITE_HA_TOKEN=<Token, s. Kap. 7.2>
-docker compose up -d --build
+# Home Assistant – eigener Container, Konfiguration in ~/homeassistant
+docker run -d --name homeassistant --restart=unless-stopped --privileged --network=host \
+  -v /home/wowsit/homeassistant:/config -e TZ=Europe/Berlin \
+  ghcr.io/home-assistant/home-assistant:stable
+
+# Dashboard – nginx liefert den fertigen Build aus ~/dashboard/dist aus
+mkdir -p ~/dashboard/dist
+# nginx.conf aus dem Repo (deploy/nginx.conf) nach ~/dashboard/nginx.conf kopieren
+docker run -d --name pi-dashboard --restart=unless-stopped -p 8080:80 \
+  -v /home/wowsit/dashboard/dist:/usr/share/nginx/html \
+  -v /home/wowsit/dashboard/nginx.conf:/etc/nginx/conf.d/default.conf \
+  nginx:alpine
 ```
 
-Beim **allerersten** Start existiert noch kein Token: `docker compose up -d homeassistant`, HA unter `http://homehole.local:8123` einrichten (Kap. 7), Token erzeugen, in `.env` eintragen, dann `docker compose up -d --build dashboard`. Wichtig: `VITE_*` werden **beim Build** eingebrannt – nach jeder Änderung an `.env` neu bauen.
+Der Build entsteht **nicht auf dem Pi** (zu langsam, kein Repo-Klon dort), sondern am Laptop oder bei Viktor und wird als `dist/` kopiert:
 
-Prüfen: `http://homehole.local:8080` zeigt das Dashboard, `docker compose ps` zeigt beide Container `running`.
+```bash
+# am Laptop / bei Viktor, im Repo auf main
+VITE_HA_URL=auto VITE_HA_TOKEN=<Long-Lived-Token> npm run build
+tar czf dist.tgz -C dist . && scp dist.tgz wowsit@homehole:/tmp/
+# auf dem Pi
+cd ~/dashboard && cp -a dist dist.bak-$(date +%Y%m%d-%H%M%S) \
+  && rm -rf dist/* && tar xzf /tmp/dist.tgz -C dist && rm /tmp/dist.tgz \
+  && docker exec pi-dashboard nginx -s reload
+```
+
+Danach im Browser **hart neu laden** (Cmd+Shift+R), sonst bleibt das alte JS im Cache. Wichtig: `VITE_*` werden **beim Build** eingebrannt – bei neuem Token oder anderer URL neu bauen. `VITE_HA_URL=auto` ist Pflicht, damit derselbe Build vom Kiosk (`localhost`) und vom Mac (`192.168.178.151`) funktioniert.
+
+Prüfen: `http://192.168.178.151:8080` zeigt das Dashboard, `docker ps` zeigt `homeassistant` und `pi-dashboard` als `Up`. Fehlersuche: `docker logs --tail 50 pi-dashboard` – tauchen dort Anfragen wie `GET /auto/api/…` oder `GET /ws/api/websocket` auf, ist ein alter Build ohne `auto`-Unterstützung im Einsatz → neu bauen.
+
+**Alternative (Neuaufbau von null):** `deploy/docker-compose.yml` startet HA + Dashboard zusammen und baut das Dashboard auf dem Pi (`cd ~/SmartHomeHeart/deploy && cp ../.env.example .env && docker compose up -d --build`). Auf einem Pi 4 mit 2 GB dauert der Build lange; der obige Weg ist im Alltag schneller.
+
+Sprachassistent-Container (`calhelper`, `groq_stt`): siehe `assistant/README.md` (`cd assistant && docker compose up -d --build`).
 
 ### 6.4 Display hochkant
 
@@ -202,7 +240,7 @@ bash ~/SmartHomeHeart/deploy/kiosk/install-kiosk.sh
 sudo reboot
 ```
 
-Das Skript installiert Chromium, `unclutter`, Inter-Schrift, setzt Autologin auf den Desktop, schaltet Bildschirm-Blanking aus und legt `~/kiosk.sh` + Autostart (labwc und XDG) an. `kiosk.sh` startet Chromium mit `--kiosk http://localhost:8080/?kiosk=1`, unterdrückt Fehlerdialoge, deaktiviert Pinch-Zoom und Rückwärts-Wischen. Andere URL: `DASHBOARD_URL=… ~/kiosk.sh`.
+Stand 3.9.2026 ist der Kiosk auf `homehole` **noch nicht eingerichtet** (kein `~/kiosk.sh`, kein Autostart) – das Display fehlt noch. Das Skript installiert Chromium, `unclutter`, Inter-Schrift, setzt Autologin auf den Desktop, schaltet Bildschirm-Blanking aus und legt `~/kiosk.sh` + Autostart (labwc und XDG) an. `kiosk.sh` startet Chromium mit `--kiosk http://localhost:8080/?kiosk=1`, unterdrückt Fehlerdialoge, deaktiviert Pinch-Zoom und Rückwärts-Wischen. Andere URL: `DASHBOARD_URL=… ~/kiosk.sh`.
 
 ## 7. Home Assistant
 
@@ -216,7 +254,7 @@ Profil (unten links) → *Sicherheit* → *Langlebige Zugangstoken* → *Token e
 
 ### 7.3 CORS
 
-In `deploy/ha-config/configuration.yaml` (Block wie in Kap. 5, zusätzlich `http://homehole.local:8080` und `http://<Pi-IP>:8080`). HA neu starten: *Einstellungen → System → Neu starten*.
+Auf `homehole` ist die `http:`-Konfiguration bereits in die UI migriert (`~/homeassistant/.storage/http`, `yaml_migration_done: true`) – ein `http:`-Block in `configuration.yaml` wird **ignoriert**. Erlaubte Origins (Stand 3.9.2026): `http://localhost:5173`, `http://localhost:8080`, `http://192.168.178.151:8080`, `http://homehole.local:8080`, `http://100.109.2.10:8080`. Ändern: *Einstellungen → System → Netzwerk* (HTTP-Einstellungen) oder `.storage/http` → `data.stable.cors_allowed_origins`, dann HA neu starten. Prüfen: `curl -sD - -o /dev/null -H "Origin: http://192.168.178.151:8080" -H "Authorization: Bearer <Token>" http://localhost:8123/api/ | grep -i access-control`.
 
 ### 7.4 Apple-Kalender (CalDAV)
 
@@ -245,30 +283,31 @@ Alle Geräte werden in `src/config.ts` referenziert: `lights` (4 Lichter der Üb
 
 ## 8. Fernzugriff (Tailscale)
 
-Auf dem Pi:
+Auf dem Pi läuft Tailscale (1.102.x), Node `homehole` = `100.109.2.10`. Installation: `curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`.
 
-```bash
-curl -fsSL https://tailscale.com/install.sh | sh
-sudo tailscale up            # Link im Browser öffnen, mit dem Tailscale-Konto anmelden
-tailscale ip -4              # → 100.109.2.10 (homehole)
-```
+Viktor hängt als Node **`viktor-ai`** im Tailnet (per Auth-Key aufgenommen) und erreicht:
 
-Viktor hängt als Node `viktor-sandbox` im Tailnet (per Auth-Key aufgenommen) und erreicht HA unter `http://100.109.2.10:8123`. Damit kann Viktor Entities auslesen, Integrationen (z. B. CalDAV) per HA-API einrichten und die Konfiguration prüfen. Zugriff jederzeit in der Tailscale-Admin-Konsole entziehen (Node löschen). Auth-Keys sind Einmal-Keys; nach Verwendung in der Konsole widerrufen.
+- Home Assistant: `http://100.109.2.10:8123` (eigener Long-Lived-Token `viktor`)
+- Dashboard: `http://100.109.2.10:8080`
+- SSH als `wowsit`: Viktors öffentlicher Schlüssel steht in `~/.ssh/authorized_keys`. **Tailscale SSH ist auf dem Pi abgeschaltet** (`sudo tailscale set --ssh=false`), weil die Standard-ACL im „check“-Modus eine Browser-Bestätigung verlangt, die ein Headless-Client nicht leisten kann. Klassisches sshd über die Tailnet-IP funktioniert.
+
+Damit kann Viktor Builds einspielen, Container/Logs prüfen und HA-Konfiguration lesen. Zugriff entziehen: Node `viktor-ai` in der Tailscale-Admin-Konsole löschen und/oder Key aus `authorized_keys` entfernen. Die LAN-IP `192.168.178.151` ist von außen nicht erreichbar; sie ist per DHCP vergeben (feste IP in der Fritz!Box noch offen).
 
 ## 9. Betrieb
 
-| Aufgabe | Befehl (auf dem Pi, in `~/SmartHomeHeart/deploy`) |
+| Aufgabe | Befehl (auf dem Pi) |
 |---|---|
-| Update einspielen | `git -C .. pull && docker compose up -d --build dashboard` |
-| HA aktualisieren | `docker compose pull homeassistant && docker compose up -d homeassistant` |
-| Logs | `docker compose logs -f dashboard` / `docker compose logs -f homeassistant` |
-| Status | `docker compose ps` |
-| Kiosk neu starten | `pkill chromium; ~/kiosk.sh &` |
+| Dashboard-Update einspielen | Build am Laptop/bei Viktor, `dist/` kopieren, `docker exec pi-dashboard nginx -s reload` (Kap. 6.3) |
+| HA aktualisieren | `docker pull ghcr.io/home-assistant/home-assistant:stable && docker stop homeassistant && docker rm homeassistant`, dann `docker run …` aus Kap. 6.3 (Konfiguration bleibt in `~/homeassistant`) |
+| Logs | `docker logs -f pi-dashboard` / `docker logs -f homeassistant` / `docker logs -f groq_stt` |
+| Status | `docker ps -a` |
+| Kiosk neu starten | `pkill chromium; ~/kiosk.sh &` (sobald Kiosk eingerichtet) |
 | HA-Konfiguration prüfen | *Entwicklerwerkzeuge → YAML → Konfiguration prüfen* |
+| Letzte STT-Aufnahme anhören | `docker cp groq_stt:/tmp/last.wav .` (Container läuft mit `DEBUG_SAVE=1`) |
 
 Fehlerbilder:
 
-- **„Keine Verbindung zu Home Assistant“** unten links → Token falsch/abgelaufen, HA nicht erreichbar, oder `VITE_HA_URL` zeigt auf einen Host, den der Browser nicht auflöst. `.env` prüfen, neu bauen.
+- **„Keine Verbindung zu Home Assistant“** unten links → Token falsch/abgelaufen (HA antwortet 401), HA nicht erreichbar, oder Build ohne `auto`-Unterstützung (nginx-Log zeigt `/auto/api/…`). Mit gültigem Token und `VITE_HA_URL=auto` neu bauen, Browser hart neu laden.
 - **Kalender leer, Rest funktioniert** → CORS fehlt (Kap. 7.3) oder Entity-ID in `config.ts` stimmt nicht.
 - **„Demo“-Badge** → Kein Token im Build oder `?mock=1` in der URL.
 - **Bild quer / Touch versetzt** → Rotation (Kap. 6.4).
@@ -286,8 +325,10 @@ Bereits in einem Chat gepostete Secrets gelten als kompromittiert und werden rot
 
 ## 11. Offene Punkte
 
-1. HA-Token für Viktor + Apple-ID → CalDAV einrichten, echte `calendar.*`-IDs in `config.ts`.
-2. Echte Entity-IDs für Lichter, Räume, Szenen, Media-Player eintragen (aktuell Platzhalter aus dem Demo-Modus).
-3. YouTube Music: HA-Integration (HACS „YouTube Music“ oder Music Assistant) einrichten → `media_player`-Entity.
-4. Display kaufen, Rotation + Touch-Kalibrierung auf dem Pi verifizieren.
-5. Optional: Automation für Bildschirm-Dimmen nachts (HA → `shell_command` auf dem Pi oder Chromium-Overlay).
+1. Echte Entity-IDs für Lichter, Räume, Szenen, Media-Player in `config.ts` eintragen (Kalender und Wetter sind echt, Rest noch Platzhalter).
+2. YouTube Music: HA-Integration (HACS „YouTube Music“ oder Music Assistant) einrichten → `media_player`-Entity.
+3. Display kaufen, Kiosk einrichten (Kap. 6.5), Rotation + Touch-Kalibrierung verifizieren.
+4. Feste IP für den Pi in der Fritz!Box (aktuell DHCP `192.168.178.151`).
+5. Home Assistant aktualisieren (Stand 3.9.2026: 2026.8.1 installiert, 2026.9.0 verfügbar); Pi-Pakete aktualisieren (`sudo apt full-upgrade`).
+6. Container `whisper` (lokales Fallback-STT) endgültig entfernen, sobald Groq-STT sich bewährt hat (spart ~500 MB RAM).
+7. Optional: Automation für Bildschirm-Dimmen nachts (HA → `shell_command` auf dem Pi oder Chromium-Overlay).
