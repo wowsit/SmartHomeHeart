@@ -17,7 +17,7 @@ services:
       context: ..
       dockerfile: deploy/Dockerfile
       args:
-        VITE_HA_URL: ${VITE_HA_URL:-http://localhost:8123}
+        VITE_HA_URL: ${VITE_HA_URL:-auto}
         VITE_HA_TOKEN: ${VITE_HA_TOKEN}
     container_name: pi-dashboard
     restart: unless-stopped

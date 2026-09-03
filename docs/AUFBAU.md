@@ -139,7 +139,10 @@ http:
   cors_allowed_origins:
     - http://localhost:5173
     - http://localhost:8080
+    - http://192.168.178.151:8080   # Pi-IP im LAN, damit das Dashboard auch vom Mac/Handy im Browser geht
 ```
+
+`VITE_HA_URL=auto` nimmt automatisch den Host, von dem das Dashboard geladen wurde (Port 8123) – ein Build für Kiosk (`localhost`) und Browser im LAN (`192.168.178.151`).
 
 URL-Parameter: `?mock=1` Demo erzwingen · `?kiosk=1` Mauszeiger aus · `?page=calendar` Startseite wählen.
 

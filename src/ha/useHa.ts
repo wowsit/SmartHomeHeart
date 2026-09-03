@@ -5,8 +5,11 @@ import { HaWsBackend } from './ws'
 
 export function createBackend(): HaBackend {
   const params = new URLSearchParams(location.search)
-  const url = import.meta.env.VITE_HA_URL as string | undefined
+  let url = import.meta.env.VITE_HA_URL as string | undefined
   const token = import.meta.env.VITE_HA_TOKEN as string | undefined
+  // 'auto' = HA läuft auf demselben Host wie das Dashboard (Port 8123).
+  // Funktioniert so vom Pi-Kiosk (localhost) und vom Mac im LAN (Pi-IP) mit demselben Build.
+  if (url === 'auto') url = `${location.protocol}//${location.hostname}:8123`
   if (params.get('mock') === '1' || !url || !token) return new MockBackend()
   return new HaWsBackend(url.replace(/\/$/, ''), token)
 }
