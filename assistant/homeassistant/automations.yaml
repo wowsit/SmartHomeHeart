@@ -1,8 +1,9 @@
 - id: kalender_live_refresh
   alias: 'Kalender live: iCloud abgleichen + Dashboard benachrichtigen'
-  description: Holt die iCloud-Kalender (CalDAV) jede Minute statt alle 15 min und
-    sofort nach jedem calendar.*-Service (Sprachassistent/Dashboard). Feuert danach
-    das Event smarthomeheart_calendar_refreshed, auf das das Dashboard hört.
+  description: Holt die iCloud-Kalender (CalDAV) jede Minute statt alle 15 min, sofort
+    nach jedem calendar.*/rest_command.*-Service und nach jeder Sprachassistent-Anfrage
+    (conversation.* ändert bei jeder Anfrage seinen Zeitstempel). Feuert danach das
+    Event smarthomeheart_calendar_refreshed, auf das das Dashboard hört.
   triggers:
   - trigger: time_pattern
     minutes: /1
@@ -14,11 +15,15 @@
     event_type: call_service
     event_data:
       domain: rest_command
+  - trigger: state
+    entity_id:
+    - conversation.claude_conversation
+    - conversation.home_assistant
   conditions: []
   actions:
   - if:
     - condition: template
-      value_template: '{{ trigger.platform == ''event'' }}'
+      value_template: '{{ trigger.platform in [''event'',''state''] }}'
     then:
     - delay:
         seconds: 3

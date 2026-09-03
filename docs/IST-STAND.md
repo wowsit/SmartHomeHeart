@@ -1,6 +1,6 @@
 # Ist-Stand `homehole` – automatisch exportiert
 
-> Erzeugt am **2026-09-03 18:27 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
+> Erzeugt am **2026-09-03 18:52 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
 > neu erzeugt (`deploy/export-state.sh`). Geheimnisse (Tokens, Passwörter, API-Keys, E-Mail-Adressen) sind maskiert.
 > Rohdateien liegen in [`docs/ist-stand/`](ist-stand/). Architektur & Aufbau-Anleitung: [`AUFBAU.md`](AUFBAU.md), Sprachassistent: [`../assistant/README.md`](../assistant/README.md).
 
@@ -11,8 +11,8 @@
 | Host | HomeHole |
 | OS / Kernel | Debian GNU/Linux 13 (trixie) / 6.18.34+rpt-rpi-v8 |
 | Modell | Raspberry Pi 4 Model B Rev 1.5 |
-| Uptime | up 1 hour, 43 minutes |
-| RAM | 1.2Gi belegt von 1.8Gi |
+| Uptime | up 2 hours, 8 minutes |
+| RAM | 1.1Gi belegt von 1.8Gi |
 | Disk / | 16G belegt von 29G (58%) |
 | Docker | 29.7.2, build a7dcaa6 |
 | Tailscale | 1.102.3 |
@@ -195,7 +195,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 ### YAML-Konfiguration (Kopien, Geheimnisse maskiert)
 
 - [`ist-stand/configuration.yaml`](ist-stand/configuration.yaml) (24 Zeilen)
-- [`ist-stand/automations.yaml`](ist-stand/automations.yaml) (34 Zeilen)
+- [`ist-stand/automations.yaml`](ist-stand/automations.yaml) (39 Zeilen)
 - [`ist-stand/scripts.yaml`](ist-stand/scripts.yaml) (156 Zeilen)
 - [`ist-stand/scenes.yaml`](ist-stand/scenes.yaml) (0 Zeilen)
 
@@ -220,19 +220,14 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 ### Letzte Warnungen/Fehler im HA-Log
 
 ```
-2026-09-03 18:23:31.332 WARNING (SyncWorker_0) [homeassistant.loader] We found a custom integration edge_tts which has not been tested by Home Assistant. This component might cause stability problems, be sure to disable it if you experience issues with Home Assistant
-2026-09-03 18:23:32.487 WARNING (MainThread) [homeassistant.components.http.ban] Login attempt or request with invalid authentication from localhost (127.0.0.1). Requested URL: '/api/'. (curl/8.14.1)
-2026-09-03 18:23:35.120 ERROR (MainThread) [habluetooth.manager] Missing required permissions for Bluetooth management. Automatic adapter recovery is unavailable. Add NET_ADMIN and NET_RAW capabilities to the container to enable it
-2026-09-03 18:23:35.128 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:23:49.058 ERROR (MainThread) [homeassistant.components.home_connect.coordinator] Error fetching 01KZZKFPJD9HRGDEK4GD1T2JVH-386060532692004457-001 data: Appliance Oven (386060532692004457-001) is disconnected
-2026-09-03 18:23:50.535 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:23:50.547 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:23:55.995 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:24:00.719 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:24:16.249 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:24:40.907 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:25:36.665 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 18:27:21.149 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:51:54.645 WARNING (SyncWorker_0) [homeassistant.loader] We found a custom integration edge_tts which has not been tested by Home Assistant. This component might cause stability problems, be sure to disable it if you experience issues with Home Assistant
+2026-09-03 18:51:58.424 ERROR (MainThread) [habluetooth.manager] Missing required permissions for Bluetooth management. Automatic adapter recovery is unavailable. Add NET_ADMIN and NET_RAW capabilities to the container to enable it
+2026-09-03 18:51:58.433 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:51:58.504 WARNING (MainThread) [homeassistant.components.http.ban] Login attempt or request with invalid authentication from localhost (127.0.0.1). Requested URL: '/api/'. (curl/8.14.1)
+2026-09-03 18:52:11.677 ERROR (MainThread) [homeassistant.components.home_connect.coordinator] Error fetching 01KZZKFPJD9HRGDEK4GD1T2JVH-386060532692004457-001 data: Appliance Oven (386060532692004457-001) is disconnected
+2026-09-03 18:52:12.280 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:52:12.291 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:52:17.444 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 ```
 
 ## Sprachassistent
@@ -242,7 +237,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 | openwakeword custom models | – |
 | whisper-Modelle (Fallback) | models--rhasspy--faster-whisper-tiny-int8 |
 | groq_stt letzte Aufnahme | – |
-| TTS-Cache | 57 Dateien |
+| TTS-Cache | 58 Dateien |
 
 ## Offene Ports (Host)
 

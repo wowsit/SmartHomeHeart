@@ -34,15 +34,15 @@ Deshalb Custom-Integration [hasscc/hass-edge-tts](https://github.com/hasscc/hass
 
 | Stimme | Charakter | Latenz pro Satz (vom Pi gemessen) |
 |---|---|---|
-| **`de-DE-SeraphinaMultilingualNeural`** (aktiv) | warm, natürlich, „Werbestimme“ | 1,6–2,9 s |
-| `de-DE-KatjaNeural` | klar, neutral | 0,6–2,0 s (schneller) |
+| `de-DE-SeraphinaMultilingualNeural` | warm, natürlich, „Werbestimme“ | 1,6–2,9 s |
+| **`de-DE-KatjaNeural`** (aktiv seit 2026-09-03 18:52, Wahl des Nutzers) | klar, neutral | 0,6–2,0 s (schneller) |
 | `de-DE-AmalaNeural` | jung, freundlich | ~2 s |
 | Piper `de_DE-thorsten-medium` (Fallback, lokal) | männlich | 0,9–1,4 s |
 
 Sprechtempo: `rate: "+12%"`. Einstellung liegt in den Optionen des Config-Eintrags `edge_tts` (`voice`, `rate`, `language`).
 Die UI-Optionsmaske kennt nur `language` – `voice`/`rate` deshalb per Storage-Edit (HA stoppen, `.storage/core.config_entries`
 → Eintrag `edge_tts` → `options`, HA starten) oder per Pipeline-Sprache (Pipeline-`tts_language` = Voice-Name).
-Pipeline „Haus (Claude)“: `tts_engine: tts.edge_tts_service_edge_tts`, `tts_language: de-DE-SeraphinaMultilingualNeural`.
+Pipeline „Haus (Claude)“: `tts_engine: tts.edge_tts_service_edge_tts`, `tts_language: de-DE-KatjaNeural`.
 
 Installation: `custom_components/edge_tts` (Release v0.7.7) nach `~/homeassistant/custom_components/`, HA neu starten,
 Integration „Microsoft Edge TTS“ hinzufügen (`POST /api/config/config_entries/flow {"handler":"edge_tts"}` legt den Eintrag ohne Formular an).
