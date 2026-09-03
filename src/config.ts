@@ -17,9 +17,10 @@ export interface CalendarConfig {
 
 export const config = {
   /** Wetter-Entity aus HA. Der Standort (Sandkrug, Fichtenweg 10A, 26209 Hatten) wird in HA gesetzt: Einstellungen → System → Allgemein → Standort. */
-  weather: 'weather.home',
+  weather: 'weather.forecast_home', // Met.no, in HA vorhanden (Stand 2026-09-03)
   locationName: 'Sandkrug',
-  /** Die 4 wichtigsten Lichter für das Widget auf der Übersicht */
+  /** Die 4 wichtigsten Lichter für das Widget auf der Übersicht.
+   *  TODO: In HA gibt es noch keine light-, media_player- oder scene-Entities (nur Home-Connect-Ofen) – IDs unten sind Platzhalter. */
   lights: [
     { entity: 'light.wohnzimmer_decke', name: 'Wohnzimmer' },
     { entity: 'light.kueche_decke', name: 'Küche' },
@@ -28,9 +29,9 @@ export const config = {
   ] as { entity: string; name?: string }[],
   /** Kalender-Entities aus Home Assistant. Reihenfolge = Reihenfolge in der Legende. */
   calendars: [
-    { entity: 'calendar.meine_termine', name: 'Meine Termine', color: 'green' },
-    // Zweiter Kalender kommt später – einfach hier eintragen, z. B.:
-    // { entity: 'calendar.partnerin', name: 'Lena', color: 'blue' },
+    // iCloud über HA-CalDAV (Entities aus HA, Stand 2026-09-03). 'calendar.untitled' ist leer und bewusst nicht gelistet.
+    { entity: 'calendar.hjem', name: 'Hjem', color: 'green' },
+    { entity: 'calendar.arbeid', name: 'Arbeid', color: 'blue' },
   ] as CalendarConfig[],
   mediaPlayer: 'media_player.wohnzimmer',
   scenes: [
