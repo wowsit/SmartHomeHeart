@@ -2,7 +2,9 @@ import {
   createConnection, createLongLivedTokenAuth, subscribeEntities, callService as haCallService,
   type Connection, type HassEntities,
 } from 'home-assistant-js-websocket'
-import type { NewCalendarEvent, HaBackend, EntityMap, ConnState, ForecastDay, CalendarEvent } from './types'
+import type { NewCalendarEvent, HaBackend, EntityMap, ConnState, ForecastDay, CalendarEvent, AssistLike } from './types'
+import { AssistClient } from './assist'
+import { config } from '../config'
 
 /** Echte Anbindung an Home Assistant per WebSocket (Live-Updates) + REST (Kalender). */
 export class HaWsBackend implements HaBackend {
@@ -92,5 +94,11 @@ export class HaWsBackend implements HaBackend {
       ? { summary: ev.summary, description: ev.description, start_date: ev.start, end_date: ev.end }
       : { summary: ev.summary, description: ev.description, start_date_time: ev.start, end_date_time: ev.end }
     await haCallService(conn, 'calendar', 'create_event', data, { entity_id: entityId })
+  }
+
+  private assist?: AssistClient
+  async getAssist(): Promise<AssistLike | null> {
+    const conn = await this.connPromise
+    return this.assist ?? (this.assist = new AssistClient(conn, this.url, config.assistPipeline || undefined))
   }
 }

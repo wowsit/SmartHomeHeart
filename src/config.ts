@@ -54,4 +54,10 @@ export const config = {
   /** Seite nach dem Start / nach dem Bildschirmschoner */
   startPage: 'home' as 'home' | 'smarthome' | 'music',
   screensaverAfter: 300,
+  /** Sprachassistent: Assist-Pipeline-ID aus HA (leer = bevorzugte Pipeline). Wake Word läuft in HA (openWakeWord). */
+  assistPipeline: '',
+  /** Name, der in der Sprechblase steht */
+  assistName: 'Haus',
+  /** Beim Start automatisch aufs Wake Word lauschen (Kiosk). Im Browser am Mac erst nach Antippen des Mikro-Buttons. */
+  assistAutoStart: true,
 }

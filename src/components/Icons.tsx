@@ -23,6 +23,7 @@ export const Icon = {
   next: I('M5 4l10 8-10 8zM19 4v16'),
   volume: I('M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13'),
   minus: I('M5 12h14'),
+  mic: I('M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM19 11a7 7 0 0 1-14 0M12 18v3M8 21h8'),
   close: I('M6 6l12 12M18 6 6 18'),
   bell: I('M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0'),
   shift: I('M12 4l8 9h-5v7H9v-7H4z'),

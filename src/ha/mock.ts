@@ -1,5 +1,5 @@
 import { config } from '../config'
-import type { NewCalendarEvent, HaBackend, EntityMap, HaEntity, ConnState, ForecastDay, CalendarEvent } from './types'
+import type { NewCalendarEvent, HaBackend, EntityMap, HaEntity, ConnState, ForecastDay, CalendarEvent, AssistLike, AssistState } from './types'
 
 function ent(entity_id: string, state: string, attributes: Record<string, any> = {}): HaEntity {
   return { entity_id, state, attributes, last_changed: new Date().toISOString() }
@@ -164,5 +164,29 @@ export class MockBackend implements HaBackend {
     list.push(...this.extraEvents)
     const s = start.getTime(), e = end.getTime()
     return list.filter((ev) => new Date(ev.end).getTime() >= s && new Date(ev.start).getTime() <= e).sort((a, b) => a.start.localeCompare(b.start))
+  }
+
+  private assist?: MockAssist
+  async getAssist(): Promise<AssistLike | null> { return this.assist ?? (this.assist = new MockAssist()) }
+}
+
+/** Demo-Assistent: spielt beim Antippen einen Beispieldialog ab (kein Mikro nötig). */
+class MockAssist implements AssistLike {
+  private subs = new Set<(s: AssistState) => void>()
+  private state: AssistState = { phase: 'idle' }
+  private set(p: Partial<AssistState>) { this.state = { ...this.state, ...p }; this.subs.forEach((cb) => cb(this.state)) }
+  subscribe(cb: (s: AssistState) => void) { this.subs.add(cb); cb(this.state); return () => { this.subs.delete(cb) } }
+  constructor() { (window as any).__assistDemo = (p: Partial<AssistState>) => this.set(p) } // Vorschau-Hook für Screenshots
+  async start() {}
+  stop() { this.set({ phase: 'idle', heard: undefined, answer: undefined }) }
+  async listenNow() {
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+    this.set({ phase: 'listening', heard: undefined, answer: undefined })
+    await wait(1800)
+    this.set({ phase: 'thinking', heard: 'Trag mir für Freitag um 15 Uhr Zahnarzt in den Kalender ein' })
+    await wait(1600)
+    this.set({ phase: 'speaking', answer: 'Erledigt – Zahnarzt am Freitag um 15 Uhr steht im Kalender Hjem.' })
+    await wait(4000)
+    this.set({ phase: 'idle', heard: undefined, answer: undefined })
   }
 }
