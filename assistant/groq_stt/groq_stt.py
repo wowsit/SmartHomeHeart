@@ -36,6 +36,8 @@ def transcribe(pcm: bytes, rate: int, width: int, channels: int, language: str) 
     buf = io.BytesIO()
     with wave.open(buf, "wb") as w:
         w.setnchannels(channels); w.setsampwidth(width); w.setframerate(rate); w.writeframes(pcm)
+    if os.environ.get("DEBUG_SAVE"):  # keep the last request for inspection: docker cp groq_stt:/tmp/last.wav .
+        open("/tmp/last.wav", "wb").write(buf.getvalue())
     boundary = uuid.uuid4().hex
     fields = {"model": MODEL, "language": language, "response_format": "json", "temperature": "0"}
     if PROMPT:
