@@ -15,7 +15,8 @@ HA Assist-Pipeline „Haus (Claude)“ (Sprache: de)
    │          script.kalendereintrag_erstellen  → calendar.create_event
    │          script.termin_loeschen            → rest_command.calhelper_delete → calhelper /delete
    │          script.termin_verschieben         → rest_command.calhelper_move   → calhelper /move
-   └─ TTS:  tts.google_translate_en_com (de)
+   └─ TTS:  tts.piper ── Wyoming ──▶ piper-Container (de_DE-thorsten-medium, length-scale 0.85, lokal, streaming)
+            (Fallback: tts.google_translate_en_com)
 ```
 
 Freigegebene Entitäten: `calendar.hjem` (privat), `calendar.arbeid` (Arbeit), `weather.forecast_home` und die drei Skripte.
@@ -37,7 +38,11 @@ Der alte Container `whisper` (`rhasspy/wyoming-whisper`, tiny-int8, Port 10300) 
 3. HA → Einstellungen → Geräte & Dienste → **Wyoming Protocol** hinzufügen: Host `127.0.0.1`, Port `10301` → `stt.groq_whisper`.
 4. **Anthropic**-Integration hinzufügen (API-Key), im Unterpunkt „Konversation“ den Prompt aus `claude_prompt.txt` einsetzen und „Assist“ als Steuerung aktivieren.
 5. `homeassistant/rest_command.yaml` in `configuration.yaml` einfügen → HA neu starten. Skripte aus `scripts.yaml` anlegen.
-6. Einstellungen → Sprachassistenten → Pipeline „Haus (Claude)“: Sprache de, Konversationsagent Claude, STT groq-whisper, TTS Google Translate (de), als bevorzugt setzen. Unter „Freigeben“ die Kalender, das Wetter und die drei Skripte freigeben.
+6. Einstellungen → Sprachassistenten → Pipeline „Haus (Claude)“: Sprache de, Konversationsagent Claude, STT groq-whisper, TTS Piper (de_DE, Stimme de_DE-thorsten-medium), **Lokale Intents bevorzugen = an**, als bevorzugt setzen. Piper vorher als Wyoming-Integration (127.0.0.1:10200) hinzufügen. Unter „Freigeben“ die Kalender, das Wetter und die drei Skripte freigeben.
+
+## Optimierung (Tempo, Kürze)
+
+Siehe [`../docs/SPRACHASSISTENT-OPTIMIERUNG.md`](../docs/SPRACHASSISTENT-OPTIMIERUNG.md) – Regeln für Antwortlänge, Thinking aus, lokale Intents, STT-Halluzinationsfilter, Piper-TTS. Anthropic-Optionen per API: [`../deploy/ha-anthropic-options.md`](../deploy/ha-anthropic-options.md).
 
 ## Verhalten (aus dem Prompt)
 

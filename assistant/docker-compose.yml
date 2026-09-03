@@ -14,3 +14,12 @@ services:
     restart: unless-stopped
     env_file: ./groq_stt/.env
     ports: ["127.0.0.1:10301:10301"]
+
+  piper:
+    # lokale TTS (Wyoming), deutsch, streamingfähig; length-scale < 1 = schneller sprechen
+    image: rhasspy/wyoming-piper
+    container_name: piper
+    restart: unless-stopped
+    command: --voice de_DE-thorsten-medium --length-scale 0.85
+    volumes: ["/home/wowsit/piper-data:/data"]
+    ports: ["127.0.0.1:10200:10200"]

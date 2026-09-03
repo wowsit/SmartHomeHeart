@@ -176,8 +176,9 @@ def sec_ha(out: Path) -> str:
     pl = storage("assist_pipeline.pipelines")
     pref = pl.get("preferred_item")
     rows = [[("★ " if p["id"] == pref else "") + p["name"], p.get("language"), p.get("conversation_engine"), p.get("stt_engine") or "–",
-             p.get("tts_engine") or "–", f"{p.get('wake_word_entity') or '–'} / {p.get('wake_word_id') or '–'}"] for p in pl.get("items", [])]
-    parts.append("### Assist-Pipelines (★ = bevorzugt)\n\n" + table(["Name", "Sprache", "Konversation", "STT", "TTS", "Wake-Word Entity / ID"], rows))
+             (p.get("tts_engine") or "–") + (f" ({p['tts_voice']})" if p.get("tts_voice") else ""), "ja" if p.get("prefer_local_intents") else "nein",
+             f"{p.get('wake_word_entity') or '–'} / {p.get('wake_word_id') or '–'}"] for p in pl.get("items", [])]
+    parts.append("### Assist-Pipelines (★ = bevorzugt)\n\n" + table(["Name", "Sprache", "Konversation", "STT", "TTS (Stimme)", "Lokale Intents", "Wake-Word Entity / ID"], rows))
     # Exposed entities
     ex = storage("homeassistant.exposed_entities").get("exposed_entities", {})
     exposed = sorted(k for k, v in ex.items() if any(a.get("should_expose") for a in v.get("assistants", {}).values()))

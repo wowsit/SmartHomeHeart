@@ -1,6 +1,6 @@
 # Ist-Stand `homehole` – automatisch exportiert
 
-> Erzeugt am **2026-09-03 16:55 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
+> Erzeugt am **2026-09-03 18:08 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
 > neu erzeugt (`deploy/export-state.sh`). Geheimnisse (Tokens, Passwörter, API-Keys, E-Mail-Adressen) sind maskiert.
 > Rohdateien liegen in [`docs/ist-stand/`](ist-stand/). Architektur & Aufbau-Anleitung: [`AUFBAU.md`](AUFBAU.md), Sprachassistent: [`../assistant/README.md`](../assistant/README.md).
 
@@ -11,9 +11,9 @@
 | Host | HomeHole |
 | OS / Kernel | Debian GNU/Linux 13 (trixie) / 6.18.34+rpt-rpi-v8 |
 | Modell | Raspberry Pi 4 Model B Rev 1.5 |
-| Uptime | up 11 minutes |
-| RAM | 989Mi belegt von 1.8Gi |
-| Disk / | 13G belegt von 29G (48%) |
+| Uptime | up 1 hour, 24 minutes |
+| RAM | 1.3Gi belegt von 1.8Gi |
+| Disk / | 16G belegt von 29G (57%) |
 | Docker | 29.7.2, build a7dcaa6 |
 | Tailscale | 1.102.3 |
 | LAN-IP | 192.168.178.151 |
@@ -25,12 +25,15 @@
 
 | Container | Image | Status | Netz | Restart | Ports (Host→Container) | Mounts | Cmd | Env (nur Namen) |
 |---|---|---|---|---|---|---|---|---|
+| piper | rhasspy/wyoming-piper | running | bridge | unless-stopped | 127.0.0.1:10200→10200/tcp | /home/wowsit/piper-data:/data | --voice de_DE-thorsten-medium --length-scale 0.85 | – |
+| groq_stt | groq_stt | running | bridge | unless-stopped | 127.0.0.1:10301→10301/tcp | – | python -u /app/groq_stt.py | GROQ_API_KEY STT_LANGUAGE STT_PROMPT |
+| homeassistant | ghcr.io/home-assistant/home-assistant:stable | running | host | unless-stopped | – | /home/wowsit/homeassistant:/config:rw, /etc/localtime:/etc/localtime:ro | – | PIP_EXTRA_INDEX_URL S6_BEHAVIOUR_IF_STAGE2_FAILS S6_CMD_WAIT_FOR_SERVICES S6_CMD_WAIT_FOR_SERVICES_MAXTIME S6_SERVICES_GRACETIME S6_SERVICES_READYTIME UV_EXTRA_INDEX_URL UV_NO_CACHE UV_SYSTEM_PYTHON |
+| matter-server | ghcr.io/home-assistant-libs/python-matter-server:stable | running | host | unless-stopped | – | /home/wowsit/homeassistant-stack/matter:/data:rw | --storage-path /data --paa-root-cert-dir /data/credentials --primary-interface wlan0 | chip_example_url |
+| otbr | openthread/border-router:latest | running | host | always | – | /home/wowsit/homeassistant-stack/otbr:/data:rw | – | OT_INFRA_IF OT_RCP_DEVICE OT_THREAD_IF S6_OVERLAY_VERSION |
 | pi-dashboard | nginx:alpine | running | bridge | unless-stopped | 0.0.0.0:8443→443/tcp, 0.0.0.0:8080→80/tcp | /home/wowsit/dashboard/nginx.conf:/etc/nginx/conf.d/default.conf:ro, /home/wowsit/dashboard/tls:/etc/nginx/tls:ro, /home/wowsit/dashboard/dist:/usr/share/nginx/html:ro | nginx -g daemon off; | ACME_VERSION DYNPKG_RELEASE NGINX_VERSION NJS_RELEASE NJS_VERSION PKG_RELEASE |
-| groq_stt | groq_stt | running | bridge | unless-stopped | 127.0.0.1:10301→10301/tcp | – | python -u /app/groq_stt.py | DEBUG_SAVE GROQ_API_KEY STT_LANGUAGE STT_PROMPT |
 | openwakeword | rhasspy/wyoming-openwakeword | running | bridge | unless-stopped | 127.0.0.1:10500→10400/tcp | /home/wowsit/openwakeword/custom:/custom | --preload-model ok_nabu --custom-model-dir /custom | – |
 | calhelper | calhelper | running | bridge | unless-stopped | 127.0.0.1:10400→10400/tcp | – | python -u /app/calhelper.py | CALDAV_PASS CALDAV_URL CALDAV_USER TZ |
 | whisper | rhasspy/wyoming-whisper | exited | bridge | no | 0.0.0.0:10300→10300/tcp | /home/wowsit/whisper-data:/data | --model tiny-int8 --language de --beam-size 1 | – |
-| homeassistant | ghcr.io/home-assistant/home-assistant:stable | running | host | unless-stopped | – | /home/wowsit/homeassistant:/config | – | PIP_EXTRA_INDEX_URL S6_BEHAVIOUR_IF_STAGE2_FAILS S6_CMD_WAIT_FOR_SERVICES S6_CMD_WAIT_FOR_SERVICES_MAXTIME S6_SERVICES_GRACETIME S6_SERVICES_READYTIME TZ UV_EXTRA_INDEX_URL UV_NO_CACHE UV_SYSTEM_PYTHON |
 
 ## Dashboard (nginx `pi-dashboard`)
 
@@ -67,17 +70,18 @@ nginx-Konfiguration: [`ist-stand/nginx.conf`](ist-stand/nginx.conf)
 | sun | Sun | import |  | – | – |
 | wyoming | groq-whisper | user |  | host, port | – |
 | wyoming | openwakeword | user |  | host, port | – |
+| wyoming | piper | user |  | host, port | – |
 
 ### Anthropic „Claude conversation“
 
-Optionen: `{"llm_hass_api": ["assist"], "recommended": true}` – Prompt (1834 Zeichen): [`ist-stand/claude_prompt.live.txt`](ist-stand/claude_prompt.live.txt)
+Optionen: `{"chat_model": "claude-haiku-4-5", "code_execution": false, "llm_hass_api": ["assist"], "max_tokens": 250, "prompt_caching": "prompt", "recommended": false, "thinking_budget": 0, "user_location": false, "web_fetch": false, "web_fetch_max_uses": 5, "web_search": false, "web_search_max_uses": 5}` – Prompt (2283 Zeichen): [`ist-stand/claude_prompt.live.txt`](ist-stand/claude_prompt.live.txt)
 
 ### Assist-Pipelines (★ = bevorzugt)
 
-| Name | Sprache | Konversation | STT | TTS | Wake-Word Entity / ID |
-|---|---|---|---|---|---|
-| Home Assistant | en | conversation.home_assistant | – | – | – / – |
-| ★ Haus (Claude) | de | conversation.claude_conversation | stt.groq_whisper | tts.google_translate_en_com | wake_word.openwakeword / hey_jarvis |
+| Name | Sprache | Konversation | STT | TTS (Stimme) | Lokale Intents | Wake-Word Entity / ID |
+|---|---|---|---|---|---|---|
+| Home Assistant | en | conversation.home_assistant | – | – | nein | – / – |
+| ★ Haus (Claude) | de | conversation.claude_conversation | stt.groq_whisper | tts.piper (de_DE-thorsten-medium) | ja | wake_word.openwakeword / hey_jarvis |
 
 ### Für Assist freigegebene Entitäten (explizit)
 
@@ -104,7 +108,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 |---|---|
 | emfy | device_tracker.fynns_iphone |
 
-### Entitäten (75)
+### Entitäten (76)
 
 | Integration | Entity-ID | Name | Bereich | Status | Assist |
 |---|---|---|---|---|---|
@@ -182,6 +186,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 | sun | `sensor.sun_solar_azimuth` | Solar azimuth | – | aus: integration | – |
 | sun | `sensor.sun_solar_elevation` | Solar elevation | – | aus: integration | – |
 | wyoming | `stt.groq_whisper` | groq-whisper | – | aktiv | – |
+| wyoming | `tts.piper` | piper | – | aktiv | – |
 | wyoming | `wake_word.openwakeword` | openwakeword | – | aktiv | – |
 
 ### YAML-Konfiguration (Kopien, Geheimnisse maskiert)
@@ -212,18 +217,21 @@ _keine_
 ### Letzte Warnungen/Fehler im HA-Log
 
 ```
-2026-09-03 16:45:39.105 ERROR (MainThread) [habluetooth.manager] Missing required permissions for Bluetooth management. Automatic adapter recovery is unavailable. Add NET_ADMIN and NET_RAW capabilities to the container to enable it
-2026-09-03 16:45:39.152 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:46:07.778 ERROR (MainThread) [homeassistant.components.home_connect.coordinator] Error fetching 01KZZKFPJD9HRGDEK4GD1T2JVH-386060532692004457-001 data: Appliance Oven (386060532692004457-001) is disconnected
-2026-09-03 16:46:09.291 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:46:09.299 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:46:14.554 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:46:19.650 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:46:34.644 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:47:00.113 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:47:54.921 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:49:40.421 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
-2026-09-03 16:53:15.115 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:12:52.858 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:19:17.789 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:22:53.145 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:29:18.118 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:32:53.372 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:39:18.234 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:42:53.779 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:49:18.493 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:52:54.078 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 17:59:18.583 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:02:54.473 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:05:00.110 ERROR (MainThread) [homeassistant.components.tts] Error on init tts: Language 'de' not supported
+2026-09-03 18:05:00.113 ERROR (MainThread) [homeassistant.helpers.http] Unable to serialize to JSON. Bad data found at $.error=Language 'de' not supported(<class 'homeassistant.exceptions.HomeAssistantError'>
+2026-09-03 18:05:17.736 ERROR (MainThread) [homeassistant.components.tts] Error on init tts: Language 'de' not supported
+2026-09-03 18:05:17.737 ERROR (MainThread) [homeassistant.helpers.http] Unable to serialize to JSON. Bad data found at $.error=Language 'de' not supported(<class 'homeassistant.exceptions.HomeAssistantError'>
 ```
 
 ## Sprachassistent
@@ -232,25 +240,29 @@ _keine_
 |---|---|
 | openwakeword custom models | – |
 | whisper-Modelle (Fallback) | models--rhasspy--faster-whisper-tiny-int8 |
-| groq_stt letzte Aufnahme | 100844 Bytes, Sep 3 13:11 |
-| TTS-Cache | 26 Dateien |
+| groq_stt letzte Aufnahme | – |
+| TTS-Cache | 39 Dateien |
 
 ## Offene Ports (Host)
 
 ```
 0.0.0.0:111  rpcbind
 0.0.0.0:22  sshd
+0.0.0.0:5580  matter-server
 0.0.0.0:8080  docker-proxy
 0.0.0.0:8123  python3
 0.0.0.0:8443  docker-proxy
 100.109.2.10:35581  tailscaled
 [::]:111  rpcbind
+127.0.0.1:10200  docker-proxy
 127.0.0.1:10301  docker-proxy
 127.0.0.1:10400  docker-proxy
 127.0.0.1:10500  docker-proxy
 127.0.0.1:18554  go2rtc
+127.0.0.1:8081  otbr-agent
 *:18555  go2rtc
 [::]:22  sshd
+[::]:5580  matter-server
 [::]:8080  docker-proxy
 [::]:8123  python3
 [::]:8443  docker-proxy

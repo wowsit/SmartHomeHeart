@@ -1,5 +1,120 @@
 [
   {
+    "name": "piper",
+    "image": "rhasspy/wyoming-piper",
+    "status": "running",
+    "network": "bridge",
+    "restart": "unless-stopped",
+    "ports": {
+      "10200/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "10200"
+        }
+      ]
+    },
+    "binds": [
+      "/home/wowsit/piper-data:/data"
+    ],
+    "cmd": [
+      "--voice",
+      "de_DE-thorsten-medium",
+      "--length-scale",
+      "0.85"
+    ],
+    "env_keys": []
+  },
+  {
+    "name": "groq_stt",
+    "image": "groq_stt",
+    "status": "running",
+    "network": "bridge",
+    "restart": "unless-stopped",
+    "ports": {
+      "10301/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "10301"
+        }
+      ]
+    },
+    "binds": null,
+    "cmd": [
+      "python",
+      "-u",
+      "/app/groq_stt.py"
+    ],
+    "env_keys": [
+      "GROQ_API_KEY",
+      "STT_LANGUAGE",
+      "STT_PROMPT"
+    ]
+  },
+  {
+    "name": "homeassistant",
+    "image": "ghcr.io/home-assistant/home-assistant:stable",
+    "status": "running",
+    "network": "host",
+    "restart": "unless-stopped",
+    "ports": {},
+    "binds": [
+      "/home/wowsit/homeassistant:/config:rw",
+      "/etc/localtime:/etc/localtime:ro"
+    ],
+    "cmd": null,
+    "env_keys": [
+      "PIP_EXTRA_INDEX_URL",
+      "S6_BEHAVIOUR_IF_STAGE2_FAILS",
+      "S6_CMD_WAIT_FOR_SERVICES",
+      "S6_CMD_WAIT_FOR_SERVICES_MAXTIME",
+      "S6_SERVICES_GRACETIME",
+      "S6_SERVICES_READYTIME",
+      "UV_EXTRA_INDEX_URL",
+      "UV_NO_CACHE",
+      "UV_SYSTEM_PYTHON"
+    ]
+  },
+  {
+    "name": "matter-server",
+    "image": "ghcr.io/home-assistant-libs/python-matter-server:stable",
+    "status": "running",
+    "network": "host",
+    "restart": "unless-stopped",
+    "ports": {},
+    "binds": [
+      "/home/wowsit/homeassistant-stack/matter:/data:rw"
+    ],
+    "cmd": [
+      "--storage-path",
+      "/data",
+      "--paa-root-cert-dir",
+      "/data/credentials",
+      "--primary-interface",
+      "wlan0"
+    ],
+    "env_keys": [
+      "chip_example_url"
+    ]
+  },
+  {
+    "name": "otbr",
+    "image": "openthread/border-router:latest",
+    "status": "running",
+    "network": "host",
+    "restart": "always",
+    "ports": {},
+    "binds": [
+      "/home/wowsit/homeassistant-stack/otbr:/data:rw"
+    ],
+    "cmd": null,
+    "env_keys": [
+      "OT_INFRA_IF",
+      "OT_RCP_DEVICE",
+      "OT_THREAD_IF",
+      "S6_OVERLAY_VERSION"
+    ]
+  },
+  {
     "name": "pi-dashboard",
     "image": "nginx:alpine",
     "status": "running",
@@ -36,33 +151,6 @@
       "NJS_RELEASE",
       "NJS_VERSION",
       "PKG_RELEASE"
-    ]
-  },
-  {
-    "name": "groq_stt",
-    "image": "groq_stt",
-    "status": "running",
-    "network": "bridge",
-    "restart": "unless-stopped",
-    "ports": {
-      "10301/tcp": [
-        {
-          "HostIp": "127.0.0.1",
-          "HostPort": "10301"
-        }
-      ]
-    },
-    "binds": null,
-    "cmd": [
-      "python",
-      "-u",
-      "/app/groq_stt.py"
-    ],
-    "env_keys": [
-      "DEBUG_SAVE",
-      "GROQ_API_KEY",
-      "STT_LANGUAGE",
-      "STT_PROMPT"
     ]
   },
   {
@@ -143,29 +231,5 @@
       "1"
     ],
     "env_keys": []
-  },
-  {
-    "name": "homeassistant",
-    "image": "ghcr.io/home-assistant/home-assistant:stable",
-    "status": "running",
-    "network": "host",
-    "restart": "unless-stopped",
-    "ports": {},
-    "binds": [
-      "/home/wowsit/homeassistant:/config"
-    ],
-    "cmd": null,
-    "env_keys": [
-      "PIP_EXTRA_INDEX_URL",
-      "S6_BEHAVIOUR_IF_STAGE2_FAILS",
-      "S6_CMD_WAIT_FOR_SERVICES",
-      "S6_CMD_WAIT_FOR_SERVICES_MAXTIME",
-      "S6_SERVICES_GRACETIME",
-      "S6_SERVICES_READYTIME",
-      "TZ",
-      "UV_EXTRA_INDEX_URL",
-      "UV_NO_CACHE",
-      "UV_SYSTEM_PYTHON"
-    ]
   }
 ]

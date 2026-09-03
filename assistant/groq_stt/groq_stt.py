@@ -1,8 +1,15 @@
 """Wyoming STT server that forwards audio to Groq's Whisper API (whisper-large-v3-turbo).
 
 Env: GROQ_API_KEY (required), GROQ_MODEL (default whisper-large-v3-turbo),
-     STT_LANGUAGE (default de), STT_PROMPT (optional vocabulary hint), PORT (default 10301).
+     STT_LANGUAGE (default de), STT_PROMPT (vocabulary hint; default below), PORT (default 10301),
+     STT_MIN_SECONDS (default 0.6), STT_MAX_COMPRESSION (default 2.4), STT_MIN_LOGPROB (default -1.0).
+
+Halluzinationsfilter: Whisper erfindet bei Stille/Rauschen Text ("Amen.", "Untertitelung des ZDF",
+Wortschleifen wie "Lich, Gitarren, Lich, Gitarren"). Wir holen verbose_json und verwerfen Segmente mit
+hoher compression_ratio (Wiederholung), sehr niedrigem avg_logprob oder bekannten Floskeln, damit der
+Agent nicht auf Müll reagiert (leerer Text = HA sagt nur "Ich habe nichts verstanden").
 """
+import re
 import asyncio
 import io
 import json
@@ -22,7 +29,36 @@ _LOG = logging.getLogger("groq_stt")
 API = "https://api.groq.com/openai/v1/audio/transcriptions"
 MODEL = os.environ.get("GROQ_MODEL", "whisper-large-v3-turbo")
 LANG = os.environ.get("STT_LANGUAGE", "de")
-PROMPT = os.environ.get("STT_PROMPT", "")
+PROMPT = os.environ.get("STT_PROMPT", "Hey Jarvis. Zahnarzt, Termin, Kalender, Hjem, Arbeid, Einkaufsliste, "
+                        "Licht, Heizung, Ofen, Wetter, morgen, übermorgen, Uhr, verschieben, löschen.")
+MIN_SECONDS = float(os.environ.get("STT_MIN_SECONDS", "0.6"))
+MAX_COMPRESSION = float(os.environ.get("STT_MAX_COMPRESSION", "2.4"))
+MIN_LOGPROB = float(os.environ.get("STT_MIN_LOGPROB", "-1.0"))
+# Typische Whisper-Halluzinationen bei Stille (Trainingsdaten-Artefakte)
+HALLUCINATIONS = re.compile(
+    r"^(amen|untertitel(ung)?( des zdf| im auftrag des zdf)?.*|vielen dank( fürs zuschauen)?|"
+    r"das war's|bis zum nächsten mal|tschüss|copyright.*|www\..*|und|so|ja|hm+|äh+|ok(ay)?)[.!?\s]*$", re.I)
+
+
+def clean_transcript(data: dict) -> str:
+    """Filter verbose_json result; returns '' if it looks like a hallucination."""
+    kept = []
+    for seg in data.get("segments") or [{"text": data.get("text", ""), "avg_logprob": 0, "compression_ratio": 0}]:
+        t = seg.get("text", "").strip()
+        if not t:
+            continue
+        if seg.get("compression_ratio", 0) > MAX_COMPRESSION:
+            _LOG.warning("drop segment (repetition, cr=%.2f): %r", seg["compression_ratio"], t); continue
+        if seg.get("avg_logprob", 0) < MIN_LOGPROB:
+            _LOG.warning("drop segment (low confidence, lp=%.2f): %r", seg["avg_logprob"], t); continue
+        kept.append(t)
+    text = " ".join(kept).strip()
+    if HALLUCINATIONS.match(text):
+        _LOG.warning("drop transcript (known hallucination): %r", text); return ""
+    words = re.findall(r"\w+", text.lower())
+    if len(words) >= 6 and len(set(words)) / len(words) < 0.6:  # z. B. "Lich, Gitarren, Lich, Gitarren, ..."
+        _LOG.warning("drop transcript (word loop): %r", text); return ""
+    return text
 
 INFO = Info(asr=[AsrProgram(
     name="groq-whisper", description="Groq Whisper large-v3-turbo (cloud)",
@@ -39,7 +75,7 @@ def transcribe(pcm: bytes, rate: int, width: int, channels: int, language: str) 
     if os.environ.get("DEBUG_SAVE"):  # keep the last request for inspection: docker cp groq_stt:/tmp/last.wav .
         open("/tmp/last.wav", "wb").write(buf.getvalue())
     boundary = uuid.uuid4().hex
-    fields = {"model": MODEL, "language": language, "response_format": "json", "temperature": "0"}
+    fields = {"model": MODEL, "language": language, "response_format": "verbose_json", "temperature": "0"}
     if PROMPT:
         fields["prompt"] = PROMPT
     body = b""
@@ -52,7 +88,7 @@ def transcribe(pcm: bytes, rate: int, width: int, channels: int, language: str) 
         "Content-Type": f"multipart/form-data; boundary={boundary}",
         "User-Agent": "groq-stt-wyoming/1.0"})  # Cloudflare blocks default Python-urllib UA (error 1010)
     with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read())["text"].strip()
+        return clean_transcript(json.loads(r.read()))
 
 
 class Handler(AsyncEventHandler):
@@ -74,7 +110,7 @@ class Handler(AsyncEventHandler):
         if AudioStop.is_type(event.type):
             secs = len(self.pcm) / (self.rate * self.width * self.channels)
             text = ""
-            if secs > 0.3:
+            if secs >= MIN_SECONDS:
                 try:
                     text = await asyncio.get_running_loop().run_in_executor(
                         None, transcribe, bytes(self.pcm), self.rate, self.width, self.channels, self.language)
