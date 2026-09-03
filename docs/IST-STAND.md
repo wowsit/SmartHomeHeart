@@ -1,6 +1,6 @@
 # Ist-Stand `homehole` – automatisch exportiert
 
-> Erzeugt am **2026-09-03 18:52 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
+> Erzeugt am **2026-09-03 19:03 CEST** von `deploy/export-state.py` direkt auf dem Pi. **Nicht von Hand bearbeiten** – wird bei jedem Deploy
 > neu erzeugt (`deploy/export-state.sh`). Geheimnisse (Tokens, Passwörter, API-Keys, E-Mail-Adressen) sind maskiert.
 > Rohdateien liegen in [`docs/ist-stand/`](ist-stand/). Architektur & Aufbau-Anleitung: [`AUFBAU.md`](AUFBAU.md), Sprachassistent: [`../assistant/README.md`](../assistant/README.md).
 
@@ -11,8 +11,8 @@
 | Host | HomeHole |
 | OS / Kernel | Debian GNU/Linux 13 (trixie) / 6.18.34+rpt-rpi-v8 |
 | Modell | Raspberry Pi 4 Model B Rev 1.5 |
-| Uptime | up 2 hours, 8 minutes |
-| RAM | 1.1Gi belegt von 1.8Gi |
+| Uptime | up 2 hours, 19 minutes |
+| RAM | 1.2Gi belegt von 1.8Gi |
 | Disk / | 16G belegt von 29G (58%) |
 | Docker | 29.7.2, build a7dcaa6 |
 | Tailscale | 1.102.3 |
@@ -39,9 +39,9 @@
 
 | Was | Wert |
 |---|---|
-| Deployter Build | e7694d3 (main) deployed 2026-09-03 18:23 CEST |
-| Assets | index-n93kYJEE.js, index-cVlT78Jj.css |
-| dist geändert | 2026-09-03 18:21 |
+| Deployter Build | 15be1d4 (main) deployed 2026-09-03 19:03 CEST |
+| Assets | index-BB5alqnN.js, index-cm1bhJoO.css |
+| dist geändert | 2026-09-03 19:03 |
 | HA-URL-Modus | auto (location.hostname:8123 / bei https same-origin) |
 | TLS-Zertifikat | notAfter=Aug 31 14:38:12 2036 GMT X509v3 Subject Alternative Name: DNS:localhost, DNS:HomeHole, DNS:HomeHole.local, IP Address:127.0.0.1, IP Address:192.168.178.151, IP Address:100.109.2.10, DNS:homehole.tailea3a91.ts.net |
 | Backups | dist.bak-20260903-160124, dist.bak-20260903-163812 |
@@ -64,11 +64,13 @@ nginx-Konfiguration: [`ist-stand/nginx.conf`](ist-stand/nginx.conf)
 | go2rtc | go2rtc | system |  | – | – |
 | google_translate | Google Translate text-to-speech | onboarding |  | language, tld | – |
 | home_connect |  <email> | user |  | auth_implementation, token | – |
+| matter | Matter | zeroconf |  | integration_created_addon, url, use_addon | – |
 | met | Home | onboarding |  | track_home | – |
 | mobile_app | Fynn’s iPhone | registration |  | app_data, app_id, app_name, app_version, device_id, device_name, manufacturer, model, no_legacy_encryption, os_name, os_version, secret, supports_encryption, user_id, webhook_id | – |
 | radio_browser | Radio Browser | onboarding |  | – | – |
 | shopping_list | Shopping list | onboarding |  | – | – |
 | sun | Sun | import |  | – | – |
+| thread | Thread | zeroconf |  | – | – |
 | wyoming | groq-whisper | user |  | host, port | – |
 | wyoming | openwakeword | user |  | host, port | – |
 | wyoming | piper | user |  | host, port | – |
@@ -228,6 +230,13 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 2026-09-03 18:52:12.280 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 2026-09-03 18:52:12.291 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 2026-09-03 18:52:17.444 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:52:22.596 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:52:37.568 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:53:03.016 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:53:38.569 ERROR (MainThread) [homeassistant.components.websocket_api.http.connection] [547246841680] Error handling message: expected str for dictionary value @ data['pipeline_run_id']. Got {'pipeline_run_id': '01M1M317XDGWBXDDQAYS5WQ6TY', 'timestamp': '2026-09-03T16:53:32.205982+00:00'} (invalid_format) emfy from 127.0.0.1 (Python/3.13 websockets/17.1)
+2026-09-03 18:53:57.805 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:55:43.203 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
+2026-09-03 18:59:17.994 ERROR (MainThread) [habluetooth.scanner] hci0 (D8:3A:DD:87:BD:3B): Failed to force stop scanner
 ```
 
 ## Sprachassistent
@@ -237,7 +246,7 @@ Living Room (`living_room`), Kitchen (`kitchen`), Bedroom (`bedroom`)
 | openwakeword custom models | – |
 | whisper-Modelle (Fallback) | models--rhasspy--faster-whisper-tiny-int8 |
 | groq_stt letzte Aufnahme | – |
-| TTS-Cache | 58 Dateien |
+| TTS-Cache | 62 Dateien |
 
 ## Offene Ports (Host)
 
