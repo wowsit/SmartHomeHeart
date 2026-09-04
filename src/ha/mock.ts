@@ -13,6 +13,10 @@ const climate = (id: string, name: string, current: number, target: number) =>
 
 function initialEntities(): EntityMap {
   const list: HaEntity[] = [
+    // echte Entities der HA-Instanz (Schaltsteckdosen + Gruppen-Helfer)
+    sw('switch.wohnzimmer', 'Wohnzimmer', true),
+    sw('switch.esszimmer', 'Esszimmer', true),
+    sw('switch.licht_wohnen', 'Licht Wohnen', true),
     light('light.wohnzimmer_decke', 'Deckenlampe', true, 180),
     light('light.wohnzimmer_stehlampe', 'Stehlampe', true, 90),
     climate('climate.wohnzimmer', 'Heizung', 21.4, 22),
