@@ -19,13 +19,13 @@ export const config = {
   /** Wetter-Entity aus HA. Der Standort (Sandkrug, Fichtenweg 10A, 26209 Hatten) wird in HA gesetzt: Einstellungen → System → Allgemein → Standort. */
   weather: 'weather.forecast_home', // Met.no, in HA vorhanden (Stand 2026-09-03)
   locationName: 'Sandkrug',
-  /** Die 4 wichtigsten Lichter für das Widget auf der Übersicht.
-   *  TODO: In HA gibt es noch keine light-, media_player- oder scene-Entities (nur Home-Connect-Ofen) – IDs unten sind Platzhalter. */
+  /** Die wichtigsten Lichter für das Widget auf der Übersicht.
+   *  Echte HA-Entities (Stand 2026-09-04): beide Lampen hängen an Schaltsteckdosen, sind also `switch.*`
+   *  (kein Dimmen). `switch.licht_wohnen` ist die HA-Helfer-Gruppe aus beiden. */
   lights: [
-    { entity: 'light.wohnzimmer_decke', name: 'Wohnzimmer' },
-    { entity: 'light.kueche_decke', name: 'Küche' },
-    { entity: 'light.flur', name: 'Flur' },
-    { entity: 'light.schlafzimmer', name: 'Schlafzimmer' },
+    { entity: 'switch.licht_wohnen', name: 'Licht Wohnen' },
+    { entity: 'switch.wohnzimmer', name: 'Wohnzimmer' },
+    { entity: 'switch.esszimmer', name: 'Esszimmer' },
   ] as { entity: string; name?: string }[],
   /** Kalender-Entities aus Home Assistant. Reihenfolge = Reihenfolge in der Legende. */
   calendars: [
@@ -38,20 +38,13 @@ export const config = {
     { entity: 'calendar.privat', name: 'Privat', color: 'pink' },
     { entity: 'calendar.familie', name: 'Familie', color: 'pink' },
   ] as CalendarConfig[],
+  /** TODO: In HA gibt es noch keinen abspielfähigen Player (der LG-TV unterstützt kein play_media). Bis Music Assistant steht, bleibt die Medien-Kachel leer. */
   mediaPlayer: 'media_player.wohnzimmer',
-  scenes: [
-    { id: 'scene.gemuetlich', name: 'Gemütlich' },
-    { id: 'scene.film', name: 'Filmabend' },
-    { id: 'scene.alles_aus', name: 'Alles aus' },
-    { id: 'scene.gute_nacht', name: 'Gute Nacht' },
-  ],
+  /** In HA sind noch keine Szenen angelegt (scenes.yaml leer) – daher leer statt Platzhalter. */
+  scenes: [] as { id: string; name: string }[],
   rooms: [
-    { name: 'Wohnzimmer', entities: ['light.wohnzimmer_decke', 'light.wohnzimmer_stehlampe', 'climate.wohnzimmer'] },
-    { name: 'Küche', entities: ['light.kueche_decke', 'light.kueche_arbeitsplatte', 'switch.kaffeemaschine'] },
-    { name: 'Schlafzimmer', entities: ['light.schlafzimmer', 'light.nachttisch', 'climate.schlafzimmer'] },
-    { name: 'Bad', entities: ['light.bad', 'switch.handtuchheizung'] },
-    { name: 'Flur', entities: ['light.flur', 'switch.steckdose_flur'] },
-    { name: 'Büro', entities: ['light.buero', 'switch.schreibtisch'] },
+    { name: 'Wohnzimmer', entities: ['switch.wohnzimmer'] },
+    { name: 'Esszimmer', entities: ['switch.esszimmer'] },
   ] as RoomConfig[],
   /** Sekunden ohne Berührung bis der Uhr-Bildschirmschoner erscheint (0 = aus) */
   /** Display-Ausrichtung: 'portrait' = 1080×1920 (Wandmontage hochkant), 'landscape' = 1920×1080 */
