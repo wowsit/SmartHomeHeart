@@ -157,13 +157,21 @@ export function SmarthomePage() {
   )
 }
 
-/** Übersicht: 4 Panels für die wichtigsten Lichter (config.lights) */
+/** Übersicht: 3 Panels für die wichtigsten Lichter (config.lights) + „Alle Lichter aus" (config.allLights) */
 export function LightsWidget() {
   const entities = useEntities()
   const ha = useHa()
+  const [busy, setBusy] = useState(false)
+  const all = config.allLights.map((id) => entities[id]).filter(Boolean)
+  const allOnCount = all.filter((e) => e.state === 'on').length
+  const allOff = async () => {
+    if (busy || !all.length) return
+    setBusy(true)
+    try { await ha.callService('homeassistant', 'turn_off', { entity_id: all.map((e) => e.entity_id) }) } finally { setTimeout(() => setBusy(false), 600) }
+  }
   return (
     <div className="lights">
-      {config.lights.slice(0, 4).map(({ entity: id, name }) => {
+      {config.lights.slice(0, 3).map(({ entity: id, name }) => {
         const e = entities[id]
         const on = e?.state === 'on'
         const b = e?.attributes.brightness as number | undefined
@@ -177,6 +185,11 @@ export function LightsWidget() {
           </button>
         )
       })}
+      <button className={`light-panel all-off ${allOnCount ? 'on' : ''}`} disabled={busy || !all.length} onClick={allOff}>
+        <span className="light-icon"><Icon.power size={30} /></span>
+        <span className="light-name">Alle Lichter aus</span>
+        <span className="light-state">{!all.length ? 'Nicht gefunden' : allOnCount ? `${allOnCount} an` : 'Alles aus'}</span>
+      </button>
     </div>
   )
 }

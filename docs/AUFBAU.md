@@ -385,3 +385,14 @@ und nie im Repo.
 
 Beispielsätze: „Hey Haus, sag Viktor, er soll die Wetterkachel größer machen." ·
 „Hey Haus, Auftrag an Viktor: Musik-Lautstärke beim Start auf 30 Prozent."
+
+## 16. Licht-Bedienung (2026-09-05)
+
+- **Esszimmer synchron:** Automation `esszimmer_schalter_lampen_sync` (`assistant/homeassistant/automations.yaml`) hält
+  Wandschalter `switch.esszimmer` (SONOFF ZBMINIL2, versorgt die Lampen) und die Hue-Gruppe `light.esszimmer_deckenlampe`
+  synchron: Lampen aus → Schalter aus, Schalter an → Lampen an (wartet bis erreichbar), Lampen an → Schalter an.
+  Nur echte on↔off-Übergänge triggern, damit „unavailable“ kein Ping-Pong auslöst. Getestet 5.9.2026.
+- **Wohnzimmer aufgeräumt:** Raum zeigt nur noch die Stehlampe (`switch.stehtlampe_wohnzimmer`, An/Aus).
+  `switch.wohnzimmer` (Decke) bleibt über „Licht Wohnen“ und „Alle Lichter aus“ erreichbar.
+- **„Alle Lichter aus“:** 4. Panel im Licht-Widget der Startseite, schaltet `config.allLights`
+  (`homeassistant.turn_off`) und zeigt, wie viele Lichter noch an sind. Neue Lichter dort eintragen.

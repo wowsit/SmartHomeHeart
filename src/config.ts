@@ -24,9 +24,18 @@ export const config = {
    *  (kein Dimmen). `switch.licht_wohnen` ist die HA-Helfer-Gruppe aus beiden. */
   lights: [
     { entity: 'switch.licht_wohnen', name: 'Licht Wohnen' },
-    { entity: 'switch.wohnzimmer', name: 'Wohnzimmer' },
+    { entity: 'switch.stehtlampe_wohnzimmer', name: 'Stehlampe' },
     { entity: 'switch.esszimmer', name: 'Esszimmer' },
   ] as { entity: string; name?: string }[],
+  /** „Alle Lichter aus"-Knopf auf der Startseite (4. Panel im Licht-Widget): alles, was Licht ist.
+   *  Stand 2026-09-05: Wandschalter (ZBMINIL2) Wohn-/Esszimmer, Steckdose Stehlampe, Hue-Gruppe Esszimmer, Küche (Matter). */
+  allLights: [
+    'switch.wohnzimmer',
+    'switch.esszimmer',
+    'switch.stehtlampe_wohnzimmer',
+    'light.esszimmer_deckenlampe',
+    'light.kajplats_e27_ws_globe_1521lm',
+  ] as string[],
   /** Kalender-Entities aus Home Assistant. Reihenfolge = Reihenfolge in der Legende. */
   calendars: [
     // Fynns eigene Kalender (Account 1, fynn.hirth@protonmail.com) = gruen.
@@ -55,7 +64,8 @@ export const config = {
   /** In HA sind noch keine Szenen angelegt (scenes.yaml leer) – daher leer statt Platzhalter. */
   scenes: [] as { id: string; name: string }[],
   rooms: [
-    { name: 'Wohnzimmer', entities: ['switch.wohnzimmer'] },
+    // Wohnzimmer bewusst nur die Stehlampe (An/Aus). [wunsch, 2026-09-05]
+    { name: 'Wohnzimmer', entities: ['switch.stehtlampe_wohnzimmer'] },
     { name: 'Esszimmer', entities: ['switch.esszimmer'] },
   ] as RoomConfig[],
   /** Sekunden ohne Berührung bis der Uhr-Bildschirmschoner erscheint (0 = aus) */
