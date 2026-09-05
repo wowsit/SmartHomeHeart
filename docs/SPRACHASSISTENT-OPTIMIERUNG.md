@@ -153,3 +153,16 @@ bei „Ich höre zu …“. Fix: Container mit `--dns 192.168.178.1 --dns 1.1.1.
 
 Zusätzlich sagt der Prompt jetzt ausdrücklich: bei Musikwünschen immer „Musik abspielen“, nie die
 allgemeine Mediensuche, und nicht nach Gerät/Raum fragen. Getestet: Homecoming, Ultralight Beam, Bound 2 – alle korrekt.
+
+### Der eigentliche Grund: `prefer_local_intents` in der Pipeline
+Die Pipeline „Haus (Claude)“ hatte `prefer_local_intents: true`. Damit versucht Home Assistant **zuerst**
+seine eingebauten Satzvorlagen zu matchen und ruft Claude nur, wenn nichts passt. „Spiele X von Y“ passt auf
+`HassMediaSearchAndPlay` – Claude (und damit `script.musik_abspielen`) kam per Sprache also nie zum Zug,
+während Tests direkt gegen `conversation.process` mit `agent_id: conversation.claude_conversation`
+korrekt liefen. Deshalb sah es so aus, als sei der Fix wirkungslos.
+
+Gesetzt via `assist_pipeline/pipeline/update` (WS-API), Pipeline `01m1kftxxnw2zmtn2tbvpgc9tx`:
+`"prefer_local_intents": false`. Messung danach: Musik 5,9 s (inkl. Katalogsuche), Wetterfrage 2,1 s.
+
+**Lehre für Tests:** Sprachwege immer über `assist_pipeline/run` mit der echten Pipeline testen, nicht über
+`conversation/process` mit direktem `agent_id` – sonst wird die lokale Intent-Vorstufe übersprungen.
