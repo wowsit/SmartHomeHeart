@@ -34,6 +34,10 @@ kalendereintrag_erstellen:
           options:
           - hjem
           - arbeid
+          - kalender
+          - arbeit
+          - privat
+          - familie
     beschreibung:
       name: Beschreibung
       description: Optionale Notiz zum Termin
@@ -77,6 +81,10 @@ termin_loeschen:
           options:
           - hjem
           - arbeid
+          - kalender
+          - arbeit
+          - privat
+          - familie
   sequence:
   - action: rest_command.calhelper_delete
     data:
@@ -132,6 +140,10 @@ termin_verschieben:
           options:
           - hjem
           - arbeid
+          - kalender
+          - arbeit
+          - privat
+          - familie
   sequence:
   - action: rest_command.calhelper_move
     data:

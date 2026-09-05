@@ -4,7 +4,8 @@ HA's caldav integration can only create events, so this sidecar exposes:
   POST /delete  {"calendar": "hjem", "title": "Zahnarzt", "date": "2026-09-05"}
   POST /move    {..., "new_start": "2026-09-07 10:00:00", "new_end": optional}
   POST /find    {"calendar", "title"?, "date"?}  -> list of matching events
-Env: CALDAV_URL, CALDAV_USER, CALDAV_PASS, TZ (default Europe/Berlin), PORT.
+Env: CALDAV_URL, CALDAV_USER, CALDAV_PASS, optional CALDAV_USER2/CALDAV_PASS2 (zweiter
+     iCloud-Account), TZ (default Europe/Berlin), PORT.
 """
 import json
 import os
@@ -23,20 +24,36 @@ def norm(s: str) -> str:
     return "".join(c for c in s if c.isalnum())
 
 
-def client():
-    return caldav.DAVClient(
-        url=os.environ["CALDAV_URL"],
-        username=os.environ["CALDAV_USER"],
-        password=os.environ["CALDAV_PASS"],
-    )
+def accounts():
+    """Alle konfigurierten iCloud-Accounts: CALDAV_USER/PASS plus CALDAV_USER2/PASS2 usw."""
+    url = os.environ["CALDAV_URL"]
+    out = [(os.environ["CALDAV_USER"], os.environ["CALDAV_PASS"])]
+    i = 2
+    while os.environ.get(f"CALDAV_USER{i}"):
+        out.append((os.environ[f"CALDAV_USER{i}"], os.environ[f"CALDAV_PASS{i}"]))
+        i += 1
+    return [(u, caldav.DAVClient(url=url, username=u, password=p)) for u, p in out]
+
+
+def all_calendars():
+    """(Account, Kalender) ueber alle Accounts hinweg; Fehler eines Accounts blockieren die anderen nicht."""
+    found, errors = [], []
+    for user, cl in accounts():
+        try:
+            found.extend((user, c) for c in cl.principal().calendars())
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{user}: {exc}")
+    if not found and errors:
+        raise ValueError("Kein CalDAV-Account erreichbar: " + "; ".join(errors))
+    return found
 
 
 def get_calendar(name: str):
-    cals = client().principal().calendars()
-    for c in cals:
+    cals = all_calendars()
+    for _user, c in cals:
         if norm(str(c.name)) == norm(name):
             return c
-    raise ValueError(f"Kalender '{name}' nicht gefunden. Vorhanden: {[str(c.name) for c in cals]}")
+    raise ValueError(f"Kalender '{name}' nicht gefunden. Vorhanden: {[str(c.name) for _u, c in cals]}")
 
 
 def to_local(dt):
