@@ -69,3 +69,37 @@ export function MediaPlayer({ large = false, compact = false }: { large?: boolea
     </div>
   )
 }
+
+/** Schnellstart: startet eine Playlist/Radio in Music Assistant auf dem konfigurierten Player. */
+export function QuickPlay() {
+  const ha = useHa()
+  const [busy, setBusy] = useState<string | null>(null)
+  if (!config.musicQuickPlay.length) return null
+  const start = async (q: (typeof config.musicQuickPlay)[number]) => {
+    setBusy(q.name)
+    try {
+      await ha.callService('music_assistant', 'play_media', {
+        entity_id: config.mediaPlayer,
+        media_id: q.mediaId,
+        media_type: q.mediaType,
+        enqueue: 'replace',
+        radio_mode: q.radio,
+      })
+    } finally {
+      setTimeout(() => setBusy(null), 1500)
+    }
+  }
+  return (
+    <div className="card quickplay">
+      <div className="card-title">Schnellstart</div>
+      <div className="quickplay-grid">
+        {config.musicQuickPlay.map((q) => (
+          <button key={q.name} className={`quick-btn ${busy === q.name ? 'busy' : ''}`} onClick={() => start(q)}>
+            <Icon.music size={26} />
+            <span>{q.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}

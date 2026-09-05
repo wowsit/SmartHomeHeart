@@ -38,8 +38,18 @@ export const config = {
     { entity: 'calendar.privat', name: 'Privat', color: 'pink' },
     { entity: 'calendar.familie', name: 'Familie', color: 'pink' },
   ] as CalendarConfig[],
-  /** TODO: In HA gibt es noch keinen abspielfähigen Player (der LG-TV unterstützt kein play_media). Bis Music Assistant steht, bleibt die Medien-Kachel leer. */
-  mediaPlayer: 'media_player.wohnzimmer',
+  /** Music Assistant (HomeDeb, 192.168.178.154:8095) spielt Apple Music auf die Bluetooth-Box B06+ am Pi.
+   *  Der HA-Player kommt aus der Music-Assistant-Integration (Squeezelite-Player "Wohnzimmer-B06", Stand 2026-09-05).
+   *  Der LG-TV bleibt außen vor: er unterstützt kein play_media. */
+  mediaPlayer: 'media_player.wohnzimmer_b06',
+  /** Schnellstart-Kacheln auf der Musik-Seite. `mediaId` wird von Music Assistant in Apple Music gesucht.
+   *  `radio` = danach endlos in ähnlicher Musik weiterlaufen (Endless Mix). */
+  musicQuickPlay: [
+    { name: 'Entspannt', mediaId: 'Chill Hits', mediaType: 'playlist', radio: true },
+    { name: 'Charts', mediaId: 'Top 100 Deutschland', mediaType: 'playlist', radio: false },
+    { name: 'Rock', mediaId: 'Rock Classics', mediaType: 'playlist', radio: true },
+    { name: 'Fokus', mediaId: 'Focus', mediaType: 'playlist', radio: true },
+  ] as { name: string; mediaId: string; mediaType: 'playlist' | 'track' | 'artist' | 'album'; radio: boolean }[],
   /** In HA sind noch keine Szenen angelegt (scenes.yaml leer) – daher leer statt Platzhalter. */
   scenes: [] as { id: string; name: string }[],
   rooms: [
