@@ -341,3 +341,18 @@ Bereits in einem Chat gepostete Secrets gelten als kompromittiert und werden rot
 5. Home Assistant aktualisieren (Stand 3.9.2026: 2026.8.1 installiert, 2026.9.0 verfügbar); Pi-Pakete aktualisieren (`sudo apt full-upgrade`).
 6. Container `whisper` (lokales Fallback-STT) endgültig entfernen, sobald Groq-STT sich bewährt hat (spart ~500 MB RAM).
 7. Optional: Automation für Bildschirm-Dimmen nachts (HA → `shell_command` auf dem Pi oder Chromium-Overlay).
+
+## 13. Alle iCloud-Kalender im Dashboard (2026-09-05)
+
+Die CalDAV-Integration von Account 2 kannte anfangs nur einen Teil der Kalender – `Schule` (die mit Terminen)
+und `Calendar` fehlten. **Fix:** Config-Entry der Integration neu laden
+(`POST /api/config/config_entries/entry/<entry_id>/reload`), danach existieren `calendar.schule` und
+`calendar.calendar`. Neue iCloud-Kalender tauchen also erst nach einem Reload auf.
+
+Farben stehen in `src/config.ts` (`calendars[]`), CSS-Variablen in `src/styles.css`:
+Arbeit = grün, Familie = gelb, Calendar = dunkelblau (navy), Schule = orange, Kalender = pink,
+Privat = lila, Hjem = petrol, Arbeid = blau.
+
+**Falle beim Deploy:** `dist` auf dem Pi niemals mit `rm -rf dist && mkdir dist` ersetzen – der Bind-Mount des
+nginx-Containers zeigt dann ins Leere (HTTP 500, "rewrite or internal redirection cycle"). Entweder nur den
+Inhalt ersetzen oder danach `docker restart pi-dashboard`.

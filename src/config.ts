@@ -8,7 +8,7 @@ export interface RoomConfig {
   entities: string[] // light.*, switch.*, climate.*
 }
 
-export type CalColor = 'green' | 'blue' | 'orange' | 'purple' | 'pink' | 'grey'
+export type CalColor = 'green' | 'blue' | 'orange' | 'purple' | 'pink' | 'yellow' | 'navy' | 'teal' | 'grey'
 export interface CalendarConfig {
   entity: string // HA calendar entity, z. B. calendar.max (Google/CalDAV/… läuft über HA)
   name: string
@@ -29,14 +29,16 @@ export const config = {
   ] as { entity: string; name?: string }[],
   /** Kalender-Entities aus Home Assistant. Reihenfolge = Reihenfolge in der Legende. */
   calendars: [
-    // iCloud über HA-CalDAV (Entities aus HA, Stand 2026-09-03). 'calendar.untitled' ist leer und bewusst nicht gelistet.
+    // Fynns eigene Kalender (Account 1, fynn.hirth@protonmail.com) = gruen.
     { entity: 'calendar.hjem', name: 'Hjem', color: 'green' },
-    { entity: 'calendar.arbeid', name: 'Arbeid', color: 'blue' },
-    // Zweiter iCloud-Account (vt92@gmx.de, CalDAV-Eintrag seit 2026-09-03) – alle pink (Wunsch). 'Schule' etc. sind dort Erinnerungslisten (todo.*), keine Kalender.
-    { entity: 'calendar.kalender', name: 'Kalender', color: 'pink' },
-    { entity: 'calendar.arbeit', name: 'Arbeit', color: 'pink' },
+    { entity: 'calendar.arbeid', name: 'Arbeid', color: 'green' },
+    // Emilias Kalender (Account 2, vt92@gmx.de) = pink. [wunsch, 2026-09-05]
     { entity: 'calendar.privat', name: 'Privat', color: 'pink' },
+    { entity: 'calendar.arbeit', name: 'Arbeit', color: 'pink' },
+    { entity: 'calendar.schule', name: 'Schule', color: 'pink' },
+    { entity: 'calendar.kalender', name: 'Kalender', color: 'pink' },
     { entity: 'calendar.familie', name: 'Familie', color: 'pink' },
+    { entity: 'calendar.calendar', name: 'Calendar', color: 'pink' },
   ] as CalendarConfig[],
   /** Music Assistant (HomeDeb, 192.168.178.154:8095) spielt Apple Music auf die Bluetooth-Box B06+ am Pi.
    *  Der HA-Player kommt aus der Music-Assistant-Integration (Squeezelite-Player "Wohnzimmer-B06", Stand 2026-09-05).
