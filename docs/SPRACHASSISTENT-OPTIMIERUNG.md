@@ -115,3 +115,28 @@ Wunsch: Sprachbefehl mittig und sehr groß mitlesen. Umgesetzt in `src/component
 - Befehle vom **Handy** sieht das Dashboard über `assist_pipeline/pipeline_debug/list|get` (HA hält die letzten 10 Läufe pro Pipeline im Speicher, wachsend während des Laufs). Latenz ≤ 1 s bis zum ersten Untertitel. Läufe des eigenen Mikros werden nicht doppelt gezeigt.
 - Haltedauer nach Ende: 3 s + 70 ms/Zeichen (max 12 s); „Nichts verstanden.“ 2 s.
 - Getestet mit echtem Lauf: 1,6 s nach Start stand die Frage, 4,8 s die komplette Antwort.
+
+## 2026-09-05: Endpointing, Rückfragen, Container-DNS, Musik
+
+**Satz wurde mitten drin abgeschnitten.** HAs Assist-VAD beendet die Aufnahme nach `silence_seconds = 0.7`.
+Der Wert steckt in `AudioSettings` und ist über `assist_pipeline/run` **nicht** setzbar (die WS-API füllt nur
+`noise_suppression_level`, `auto_gain_dbfs`, `volume_multiplier`, `is_vad_enabled`). Lösung: `input.no_vad: true`
+und Endpointing im Dashboard (`AssistClient.endpoint()`): 1,8 s Stille nach erkannter Sprache, 6 s wenn gar nichts
+kommt, harter Deckel 25 s. Ende der Aufnahme = leerer Binär-Chunk (nur das Handler-Byte) auf dem WebSocket.
+
+**Mikro ging nach einer Rückfrage nicht wieder auf.** `intent-end` liefert `continue_conversation` und
+`conversation_id`. Beides wird jetzt gemerkt; nach der TTS-Ausgabe startet direkt ein `stt`-Lauf mit derselben
+`conversation_id`, statt zurück aufs Wake Word zu fallen.
+
+**Falscher Song.** Der eingebaute Intent `HassMediaSearchAndPlay` sucht ohne `media_class` und spielt schlicht
+`results[0]` – bei „Bohemian Rhapsody von Queen“ ist das ein *Album*, also läuft ein beliebiger Track daraus.
+Neues Assist-Werkzeug `script.musik_abspielen` (siehe `docs/ist-stand/scripts.yaml`) ruft
+`music_assistant.play_media` mit `media_type: track` und `radio_mode: false` auf → exakter Treffer.
+
+**Container-DNS (Ausfall 04.–05.09.).** `groq_stt` und `openwakeword` hatten `nameserver 192.168.178.52`
+(der Pi selbst, dort läuft kein DNS mehr) → `Temporary failure in name resolution`, leeres Transkript, UI hing
+bei „Ich höre zu …“. Fix: Container mit `--dns 192.168.178.1 --dns 1.1.1.1` neu erstellen; dauerhaft gehört
+`{"dns": ["192.168.178.1", "1.1.1.1"]}` in `/etc/docker/daemon.json`.
+
+**Offen:** `calhelper` läuft nur mit iCloud-Account 1 und findet die Kalender des zweiten Accounts
+(Kalender/Arbeit/Privat/Familie) nicht → Löschen/Verschieben schlägt dort mit „Kalender nicht gefunden“ fehl.

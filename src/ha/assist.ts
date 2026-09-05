@@ -46,6 +46,13 @@ export class AssistClient implements AssistLike {
   private audioEl?: HTMLAudioElement
   private unsub?: () => Promise<void> | void
   private pipelineId?: string
+  /** Eigene Endpunkt-Erkennung (HA-VAD ist mit 0,7 s Stille fest verdrahtet und schneidet Sätze ab). */
+  private speechSeen = false
+  private lastLoudAt = 0
+  private listeningSince = 0
+  /** Läuft ein Dialog mit Rückfrage weiter, hängen Folgesätze an derselben Conversation. */
+  private conversationId?: string
+  private continueConversation = false
 
   constructor(conn: Connection, haUrl: string, pipelineId?: string) {
     this.conn = conn; this.haUrl = haUrl; this.pipelineId = pipelineId
@@ -76,6 +83,7 @@ export class AssistClient implements AssistLike {
       const input = ev.inputBuffer.getChannelData(0)
       this.reportLevel(input)
       if (this.handlerId == null) return
+      this.endpoint()
       const pcm = downsample(input, rate)
       const buf = new Uint8Array(pcm.byteLength + 1)
       buf[0] = this.handlerId
@@ -101,8 +109,43 @@ export class AssistClient implements AssistLike {
     if (Math.abs((this.state.level ?? 0) - rounded) > 0.02) this.set({ level: rounded })
   }
 
+  /**
+   * Beendet das Zuhören selbst: nach SILENCE_MS Stille (statt HAs fest verdrahteten 0,7 s),
+   * spätestens nach MAX_MS. Ein leerer Binär-Chunk signalisiert HA das Ende des Audio-Streams.
+   */
+  private endpoint() {
+    if (this.state.phase !== 'listening' || this.handlerId == null) return
+    const SILENCE_MS = 1800, LEAD_IN_MS = 6000, MAX_MS = 25000
+    const now = Date.now()
+    if (!this.listeningSince) this.listeningSince = now
+    if (this.level > 0.06) { this.speechSeen = true; this.lastLoudAt = now }
+    const spoke = this.speechSeen && now - this.lastLoudAt > SILENCE_MS
+    const nobody = !this.speechSeen && now - this.listeningSince > LEAD_IN_MS
+    const tooLong = now - this.listeningSince > MAX_MS
+    if (spoke || nobody || tooLong) this.endAudio()
+  }
+
+  /** Leerer Chunk = Ende der Aufnahme; HA schickt das Transkript dann an den LLM weiter. */
+  private endAudio() {
+    if (this.handlerId == null) return
+    const buf = new Uint8Array(1)
+    buf[0] = this.handlerId
+    this.rawSocket()?.send(buf)
+    this.handlerId = null
+    this.speechSeen = false
+    this.listeningSince = 0
+  }
+
+  private armListening() {
+    this.speechSeen = false
+    this.lastLoudAt = Date.now()
+    this.listeningSince = Date.now()
+  }
+
   stop() {
     this.stopped = true
+    this.conversationId = undefined
+    this.continueConversation = false
     this.level = 0
     this.handlerId = null
     this.unsubSafe()
@@ -128,6 +171,8 @@ export class AssistClient implements AssistLike {
     if (this.stopped || this.running) return
     this.running = true
     this.handlerId = null
+    if (startStage === 'stt') this.armListening()
+    else this.conversationId = undefined
     if (startStage === 'stt') this.set({ phase: 'listening', heard: undefined, answer: undefined, source: 'local' })
     else this.set({ phase: 'idle', heard: undefined, answer: undefined, source: 'local' })
     try {
@@ -136,7 +181,10 @@ export class AssistClient implements AssistLike {
         start_stage: startStage,
         end_stage: 'tts',
         // input.timeout = 0: kein VAD-Timeout in der Wake-Word-Phase (sonst bricht HA nach 3 s Stille ab).
-        input: { sample_rate: TARGET_RATE, ...(startStage === 'wake_word' ? { timeout: 0 } : {}) },
+        // no_vad: HAs VAD beendet die Aufnahme nach 0,7 s Stille (nicht einstellbar) und schneidet
+        // dadurch mitten im Satz ab – wir erkennen das Satzende selbst (siehe endpoint()).
+        input: { sample_rate: TARGET_RATE, no_vad: true, ...(startStage === 'wake_word' ? { timeout: 0 } : {}) },
+        ...(this.conversationId ? { conversation_id: this.conversationId } : {}),
         ...(this.pipelineId ? { pipeline: this.pipelineId } : {}),
         // Gesamtlaufzeit; HA beendet den Lauf danach mit error 'timeout' → wir starten einfach neu.
         timeout: startStage === 'wake_word' ? 300 : 60,
@@ -160,9 +208,11 @@ export class AssistClient implements AssistLike {
         this.handlerId = d.runner_data?.stt_binary_handler_id ?? null
         break
       case 'wake_word-end':
+        this.armListening()
         this.set({ phase: 'listening', heard: undefined, answer: undefined })
         break
       case 'stt-start':
+        this.armListening()
         if (this.state.phase !== 'listening') this.set({ phase: 'listening' })
         break
       case 'stt-end':
@@ -175,9 +225,14 @@ export class AssistClient implements AssistLike {
         if (typeof delta === 'string' && delta) this.set({ answer: (this.state.answer ?? '') + delta })
         break
       }
-      case 'intent-end':
-        this.set({ answer: d.intent_output?.response?.speech?.plain?.speech ?? this.state.answer ?? '' })
+      case 'intent-end': {
+        const out = d.intent_output ?? {}
+        // Stellt der Assistent eine Rückfrage, hält HA die Conversation offen → danach direkt wieder zuhören.
+        this.continueConversation = !!out.continue_conversation
+        this.conversationId = this.continueConversation ? out.conversation_id : undefined
+        this.set({ answer: out.response?.speech?.plain?.speech ?? this.state.answer ?? '' })
         break
+      }
       case 'tts-end': {
         const url: string | undefined = d.tts_output?.url
         if (url) this.play(url.startsWith('http') ? url : this.haUrl + url)
@@ -214,10 +269,17 @@ export class AssistClient implements AssistLike {
     a.play().catch(() => this.finish(3500))
   }
 
-  /** Antwort noch kurz stehen lassen, dann zurück ins Lauschen. */
+  /** Antwort kurz stehen lassen; nach einer Rückfrage geht das Mikro direkt wieder auf, sonst zurück aufs Wake Word. */
   private finish(ms: number) {
+    const followUp = this.continueConversation
+    this.continueConversation = false
     setTimeout(() => {
       if (this.stopped) return
+      if (followUp) {
+        this.set({ phase: 'idle', answer: this.state.answer })
+        if (!this.running) this.loop('stt')
+        return
+      }
       this.set({ phase: 'idle', heard: undefined, answer: undefined })
       if (!this.running) this.loop('wake_word')
     }, ms)
