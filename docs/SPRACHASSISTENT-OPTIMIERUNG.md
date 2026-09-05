@@ -140,3 +140,16 @@ bei „Ich höre zu …“. Fix: Container mit `--dns 192.168.178.1 --dns 1.1.1.
 
 **Offen:** `calhelper` läuft nur mit iCloud-Account 1 und findet die Kalender des zweiten Accounts
 (Kalender/Arbeit/Privat/Familie) nicht → Löschen/Verschieben schlägt dort mit „Kalender nicht gefunden“ fehl.
+
+### Nachtrag: neue Skripte müssen für Assist freigegeben werden
+`script.musik_abspielen` stand in `scripts.yaml` und lief per Service-Call korrekt, tauchte aber nicht in
+`homeassistant/expose_entity/list` auf – Claude hat das Werkzeug also nie gesehen und weiter
+`HassMediaSearchAndPlay` benutzt (daher „Ultralight Beam“ statt „Homecoming“). Freigabe per WebSocket:
+
+```json
+{"type": "homeassistant/expose_entity", "assistants": ["conversation"],
+ "entity_ids": ["script.musik_abspielen"], "should_expose": true}
+```
+
+Zusätzlich sagt der Prompt jetzt ausdrücklich: bei Musikwünschen immer „Musik abspielen“, nie die
+allgemeine Mediensuche, und nicht nach Gerät/Raum fragen. Getestet: Homecoming, Ultralight Beam, Bound 2 – alle korrekt.
