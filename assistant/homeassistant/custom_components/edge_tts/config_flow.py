@@ -3,7 +3,7 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.components.tts import CONF_LANG
 from .const import DOMAIN, SUPPORTED_VOICES
-from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig, SelectSelectorMode
+from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 SUPPORTED_LANGUAGES_LIST = {
     **dict(zip(SUPPORTED_VOICES.values(), SUPPORTED_VOICES.keys())),
