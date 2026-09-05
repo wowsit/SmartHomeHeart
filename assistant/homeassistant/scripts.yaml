@@ -196,3 +196,25 @@ musik_abspielen:
       media_type: '{{ art | default(''track'') }}'
       enqueue: replace
       radio_mode: false
+
+# Viktor per Sprache beauftragen – Viktor 2026-09-05
+viktor_beauftragen:
+  alias: Viktor beauftragen
+  description: >-
+    Schickt einen Auftrag an Viktor (KI-Entwickler). Nutze das, wenn der Nutzer eine Aenderung
+    am Haus-System, am Dashboard, an Skripten, am Sprachassistenten oder eine Programmierung/
+    Fehlersuche wuenscht, z.B. "Viktor, mach ...", "sag Viktor ...", "Auftrag an Viktor ...".
+  fields:
+    auftrag:
+      name: Auftrag
+      description: Der komplette Wortlaut dessen, was Viktor tun soll.
+      required: true
+      selector:
+        text: null
+  sequence:
+    - action: rest_command.viktor_auftrag
+      data:
+        auftrag: "{{ auftrag }}"
+    - set_conversation_response: "Alles klar, ich habe Viktor beauftragt. Er meldet sich per Slack, wenn es fertig ist."
+  mode: queued
+  max: 5

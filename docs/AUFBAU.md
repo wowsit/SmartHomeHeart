@@ -369,3 +369,19 @@ Emilias Kalender (Account 2: `privat`, `arbeit`, `schule`, `kalender`, `familie`
 **Falle beim Deploy:** `dist` auf dem Pi niemals mit `rm -rf dist && mkdir dist` ersetzen – der Bind-Mount des
 nginx-Containers zeigt dann ins Leere (HTTP 500, "rewrite or internal redirection cycle"). Entweder nur den
 Inhalt ersetzen oder danach `docker restart pi-dashboard`.
+
+## 14. Viktor per Sprache beauftragen (2026-09-05)
+
+Assist kann Aufträge direkt an Viktor (den KI-Entwickler) schicken:
+
+1. `script.viktor_beauftragen` ist für den Sprachassistenten freigegeben. Es nimmt ein Feld `auftrag`
+   (Freitext) entgegen und antwortet sofort per `set_conversation_response`.
+2. Das Skript ruft `rest_command.viktor_auftrag` auf, das per POST an einen Viktor-Webhook geht.
+3. Der Webhook startet bei Viktor einen Agent-Lauf, der die Änderung am Pi umsetzt, alles committet
+   und einen PR pusht. Das Ergebnis meldet Viktor per Slack-DM.
+
+URL und Token stehen ausschließlich in `secrets.yaml` (`viktor_webhook_url`, `viktor_webhook_token`)
+und nie im Repo.
+
+Beispielsätze: „Hey Haus, sag Viktor, er soll die Wetterkachel größer machen." ·
+„Hey Haus, Auftrag an Viktor: Musik-Lautstärke beim Start auf 30 Prozent."

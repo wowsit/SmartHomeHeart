@@ -1,5 +1,15 @@
 # In configuration.yaml einfügen (Neustart von HA nötig, wenn rest_command vorher nicht existierte).
 rest_command:
+  # Sprachauftrag an Viktor (Webhook-Trigger). URL + Token stehen in secrets.yaml,
+  # niemals im Repo: viktor_webhook_url / viktor_webhook_token
+  viktor_auftrag:
+    url: !secret viktor_webhook_url
+    method: post
+    content_type: application/json
+    headers:
+      X-Viktor-Token: !secret viktor_webhook_token
+    payload: '{"auftrag": "{{ auftrag }}", "quelle": "sprachassistent"}'
+    timeout: 20
   calhelper_delete:
     url: http://127.0.0.1:10400/delete
     method: post
