@@ -36,6 +36,8 @@ export class AssistClient implements AssistLike {
   private haUrl: string
   private listeners = new Set<Listener>()
   private state: AssistState = { phase: 'idle' }
+  private level = 0
+  private lastLevelAt = 0
   private stream?: MediaStream
   private ctx?: AudioContext
   private handlerId: number | null = null
@@ -71,8 +73,10 @@ export class AssistClient implements AssistLike {
     const proc = this.ctx.createScriptProcessor(4096, 1, 1)
     const rate = this.ctx.sampleRate
     proc.onaudioprocess = (ev) => {
+      const input = ev.inputBuffer.getChannelData(0)
+      this.reportLevel(input)
       if (this.handlerId == null) return
-      const pcm = downsample(ev.inputBuffer.getChannelData(0), rate)
+      const pcm = downsample(input, rate)
       const buf = new Uint8Array(pcm.byteLength + 1)
       buf[0] = this.handlerId
       buf.set(new Uint8Array(pcm.buffer), 1)
@@ -82,8 +86,24 @@ export class AssistClient implements AssistLike {
     this.loop('wake_word')
   }
 
+  /** Mikrofon-Pegel (RMS, geglättet) höchstens ~12x/s melden – nur so bewegen sich die Wellen bei echtem Ton. */
+  private reportLevel(input: Float32Array) {
+    let sum = 0
+    for (let i = 0; i < input.length; i++) sum += input[i] * input[i]
+    const rms = Math.sqrt(sum / input.length)
+    // Sprache liegt grob bei RMS 0.01–0.2; darunter ist Raumrauschen.
+    const norm = Math.max(0, Math.min(1, (rms - 0.006) / 0.12))
+    this.level = this.level * 0.6 + norm * 0.4
+    const now = Date.now()
+    if (now - this.lastLevelAt < 80) return
+    this.lastLevelAt = now
+    const rounded = Math.round(this.level * 100) / 100
+    if (Math.abs((this.state.level ?? 0) - rounded) > 0.02) this.set({ level: rounded })
+  }
+
   stop() {
     this.stopped = true
+    this.level = 0
     this.handlerId = null
     this.unsubSafe()
     this.stream?.getTracks().forEach((t) => t.stop())
