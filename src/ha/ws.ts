@@ -91,9 +91,12 @@ export class HaWsBackend implements HaBackend {
 
   async createCalendarEvent(entityId: string, ev: NewCalendarEvent): Promise<void> {
     const conn = await this.connPromise
-    const data = ev.allDay
-      ? { summary: ev.summary, description: ev.description, start_date: ev.start, end_date: ev.end }
-      : { summary: ev.summary, description: ev.description, start_date_time: ev.start, end_date_time: ev.end }
+    // Wichtig: `description` nur mitschicken, wenn gesetzt. HA lehnt `description: null` mit 400 ab
+    // – genau daran ist das Anlegen vom Dashboard aus gescheitert.
+    const data: Record<string, string> = ev.allDay
+      ? { summary: ev.summary, start_date: ev.start, end_date: ev.end }
+      : { summary: ev.summary, start_date_time: ev.start, end_date_time: ev.end }
+    if (ev.description) data.description = ev.description
     await haCallService(conn, 'calendar', 'create_event', data, { entity_id: entityId })
   }
 

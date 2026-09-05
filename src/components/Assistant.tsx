@@ -70,7 +70,7 @@ function Captions({ st }: { st: AssistState }) {
   return (
     <div className={`captions ${st.phase}`} aria-live="polite">
       <div className="captions-name">{config.assistName}{st.source === 'remote' ? ' · Handy' : ''}</div>
-      {st.phase === 'listening' && <div className="captions-status"><Waves big /> Ich höre zu …</div>}
+      {st.phase === 'listening' && <div className="captions-status"><Waves big level={st.level} /> Ich höre zu …</div>}
       {st.heard && <div className="captions-heard" style={{ fontSize: fontFor(st.heard, 64) }}>„{st.heard}“</div>}
       {st.phase === 'thinking' && !st.answer && <div className="captions-status"><Dots /></div>}
       {st.answer && <div className="captions-answer" style={{ fontSize: fontFor(st.answer, 104) }}>{st.answer}{st.phase === 'thinking' && <span className="caret" />}</div>}
@@ -79,8 +79,18 @@ function Captions({ st }: { st: AssistState }) {
   )
 }
 
-function Waves({ big }: { big?: boolean }) {
-  return <span className={`waves ${big ? 'big' : ''}`}><i /><i /><i /><i /><i /></span>
+/** Wellen folgen dem echten Mikrofon-Pegel. Ohne Pegel-Info (z. B. Handy-Lauf) bleibt die alte Animation. */
+function Waves({ big, level }: { big?: boolean; level?: number }) {
+  const live = level != null
+  // Jede Säule reagiert etwas anders, damit es nicht wie ein starrer Balken aussieht.
+  const factors = [0.55, 0.85, 1, 0.8, 0.5]
+  return (
+    <span className={`waves ${big ? 'big' : ''} ${live ? 'metered' : ''}`}>
+      {factors.map((f, i) => (
+        <i key={i} style={live ? { height: `${(big ? 16 : 8) + (big ? 38 : 18) * Math.min(1, (level ?? 0) * f * 1.6)}px` } : undefined} />
+      ))}
+    </span>
+  )
 }
 function Dots() {
   return <span className="dots"><i /><i /><i /></span>

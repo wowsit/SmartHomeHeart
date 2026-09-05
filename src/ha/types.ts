@@ -26,7 +26,8 @@ export type NewCalendarEvent = Omit<CalendarEvent, 'calendar'> & { description?:
 
 export type AssistPhase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error'
 /** `source`: 'local' = Mikro des Dashboards, 'remote' = anderes Gerät (Handy-App, Satellit) – aus den Pipeline-Läufen in HA. */
-export interface AssistState { phase: AssistPhase; heard?: string; answer?: string; error?: string; source?: 'local' | 'remote' }
+/** `level` = aktueller Mikrofon-Pegel 0..1 (nur bei lokalem Lauf), damit die Wellen sich nur bewegen, wenn wirklich etwas zu hören ist. */
+export interface AssistState { phase: AssistPhase; heard?: string; answer?: string; error?: string; source?: 'local' | 'remote'; level?: number }
 /** Sprachassistent (Wake Word → STT → LLM → TTS). */
 export interface AssistLike {
   subscribe(cb: (s: AssistState) => void): () => void
