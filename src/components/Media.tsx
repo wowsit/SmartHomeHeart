@@ -23,6 +23,9 @@ export function MediaPlayer({ large = false, compact = false }: { large?: boolea
   const dur = a.media_duration ?? 0
   const pct = dur ? Math.min(100, (pos / dur) * 100) : 0
   const call = (service: string, data: Record<string, any> = {}) => ha.callService('media_player', service, { entity_id: m.entity_id, ...data })
+  // Auch in Pause/Idle bleibt der zuletzt gespielte Titel stehen; der Player-/Raumname wird nie angezeigt.
+  const title = a.media_title ?? (idle ? 'Nichts spielt' : '–')
+  const artist = a.media_artist ?? a.media_album_name ?? (a.media_title ? '' : 'Keine Wiedergabe')
   const art = a.entity_picture ? (a.entity_picture.startsWith('http') ? a.entity_picture : `${resolveHaUrl() ?? ''}${a.entity_picture}`) : null
 
   if (compact) {
@@ -30,8 +33,8 @@ export function MediaPlayer({ large = false, compact = false }: { large?: boolea
       <div className="card media compact">
         <div className="art">{art ? <img src={art} alt="" /> : <Icon.music size={32} />}</div>
         <div className="media-info">
-          <div className="media-title">{idle ? 'Nichts spielt' : a.media_title ?? '–'}</div>
-          <div className="media-artist">{idle ? a.friendly_name : a.media_artist ?? a.media_album_name ?? ''}</div>
+          <div className="media-title">{title}</div>
+          <div className="media-artist">{artist}</div>
         </div>
         <button className="round" onClick={() => call('media_play_pause')} aria-label="Play/Pause">{playing ? <Icon.pause size={28} /> : <Icon.play size={28} />}</button>
         <button className="round" onClick={() => call('media_next_track')} aria-label="Weiter"><Icon.next /></button>
@@ -44,9 +47,9 @@ export function MediaPlayer({ large = false, compact = false }: { large?: boolea
       <div className="media-top">
         <div className="art">{art ? <img src={art} alt="" /> : <Icon.music size={large ? 96 : 44} />}</div>
         <div className="media-info">
-          <div className="media-title">{idle ? 'Nichts spielt' : a.media_title ?? '–'}</div>
-          <div className="media-artist">{idle ? a.friendly_name : a.media_artist ?? a.media_album_name ?? ''}</div>
-          {large && !idle && <div className="muted small">{a.media_album_name}</div>}
+          <div className="media-title">{title}</div>
+          <div className="media-artist">{artist}</div>
+          {large && a.media_album_name && <div className="muted small">{a.media_album_name}</div>}
         </div>
       </div>
       {dur > 0 && (

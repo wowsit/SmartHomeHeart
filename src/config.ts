@@ -8,7 +8,7 @@ export interface RoomConfig {
   entities: string[] // light.*, switch.*, climate.*
 }
 
-export type CalColor = 'green' | 'blue' | 'orange' | 'purple' | 'pink' | 'grey'
+export type CalColor = 'green' | 'blue' | 'orange' | 'purple' | 'pink' | 'yellow' | 'navy' | 'teal' | 'grey'
 export interface CalendarConfig {
   entity: string // HA calendar entity, z. B. calendar.max (Google/CalDAV/… läuft über HA)
   name: string
@@ -29,14 +29,16 @@ export const config = {
   ] as { entity: string; name?: string }[],
   /** Kalender-Entities aus Home Assistant. Reihenfolge = Reihenfolge in der Legende. */
   calendars: [
-    // iCloud über HA-CalDAV (Entities aus HA, Stand 2026-09-03). 'calendar.untitled' ist leer und bewusst nicht gelistet.
-    { entity: 'calendar.hjem', name: 'Hjem', color: 'green' },
+    // Account 1 (fynn.hirth@protonmail.com), Entities aus HA. 'calendar.untitled' ist leer und bewusst nicht gelistet.
+    { entity: 'calendar.hjem', name: 'Hjem', color: 'teal' },
     { entity: 'calendar.arbeid', name: 'Arbeid', color: 'blue' },
-    // Zweiter iCloud-Account (vt92@gmx.de, CalDAV-Eintrag seit 2026-09-03) – alle pink (Wunsch). 'Schule' etc. sind dort Erinnerungslisten (todo.*), keine Kalender.
+    // Account 2 (vt92@gmx.de). Farben nach Wunsch: Arbeit grün, Familie gelb, Calendar dunkelblau (Stand 2026-09-05).
+    { entity: 'calendar.arbeit', name: 'Arbeit', color: 'green' },
+    { entity: 'calendar.schule', name: 'Schule', color: 'orange' },
     { entity: 'calendar.kalender', name: 'Kalender', color: 'pink' },
-    { entity: 'calendar.arbeit', name: 'Arbeit', color: 'pink' },
-    { entity: 'calendar.privat', name: 'Privat', color: 'pink' },
-    { entity: 'calendar.familie', name: 'Familie', color: 'pink' },
+    { entity: 'calendar.privat', name: 'Privat', color: 'purple' },
+    { entity: 'calendar.familie', name: 'Familie', color: 'yellow' },
+    { entity: 'calendar.calendar', name: 'Calendar', color: 'navy' },
   ] as CalendarConfig[],
   /** Music Assistant (HomeDeb, 192.168.178.154:8095) spielt Apple Music auf die Bluetooth-Box B06+ am Pi.
    *  Der HA-Player kommt aus der Music-Assistant-Integration (Squeezelite-Player "Wohnzimmer-B06", Stand 2026-09-05).
