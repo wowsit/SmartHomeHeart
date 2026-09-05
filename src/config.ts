@@ -27,7 +27,8 @@ export const config = {
     { entity: 'switch.stehtlampe_wohnzimmer', name: 'Stehlampe' },
     { entity: 'switch.esszimmer', name: 'Esszimmer' },
   ] as { entity: string; name?: string }[],
-  /** „Alle Lichter aus"-Knopf auf der Startseite (4. Panel im Licht-Widget): alles, was Licht ist.
+  /** Umschalter „Alle Lichter aus/an" (4. Panel im Licht-Widget). Schaltet über script.alle_lichter_aus/_an in HA;
+   *  diese Liste dient nur der Zustandsanzeige – bei neuen Lichtern hier UND in assistant/homeassistant/scripts.yaml eintragen.
    *  Stand 2026-09-05: Wandschalter (ZBMINIL2) Wohn-/Esszimmer, Steckdose Stehlampe, Hue-Gruppe Esszimmer, Küche (Matter). */
   allLights: [
     'switch.wohnzimmer',

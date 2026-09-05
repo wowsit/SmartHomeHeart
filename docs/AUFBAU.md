@@ -394,5 +394,8 @@ Beispielsätze: „Hey Haus, sag Viktor, er soll die Wetterkachel größer mache
   Nur echte on↔off-Übergänge triggern, damit „unavailable“ kein Ping-Pong auslöst. Getestet 5.9.2026.
 - **Wohnzimmer aufgeräumt:** Raum zeigt nur noch die Stehlampe (`switch.stehtlampe_wohnzimmer`, An/Aus).
   `switch.wohnzimmer` (Decke) bleibt über „Licht Wohnen“ und „Alle Lichter aus“ erreichbar.
-- **„Alle Lichter aus“:** 4. Panel im Licht-Widget der Startseite, schaltet `config.allLights`
-  (`homeassistant.turn_off`) und zeigt, wie viele Lichter noch an sind. Neue Lichter dort eintragen.
+- **„Alle Lichter aus/an“:** HA-Skripte `script.alle_lichter_aus` / `script.alle_lichter_an` (`assistant/homeassistant/scripts.yaml`,
+  für Assist freigegeben → „Hey Haus, alles aus“). Küche (Matter) läuft im eigenen `parallel`-Zweig, damit eine nicht
+  erreichbare Birne die Zigbee-Lichter nicht ~50 s blockiert. Im Dashboard ist das 4. Panel des Licht-Widgets ein
+  Umschalter: solange etwas an ist „Alle Lichter aus“, sonst „Alle Lichter an“; Zustandsanzeige über `config.allLights`.
+  Neue Lichter in beiden Listen eintragen.

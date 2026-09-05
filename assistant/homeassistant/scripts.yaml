@@ -218,3 +218,63 @@ viktor_beauftragen:
     - set_conversation_response: "Alles klar, ich habe Viktor beauftragt. Er meldet sich per Slack, wenn es fertig ist."
   mode: queued
   max: 5
+
+# Alle Lichter aus/an – gleiche Liste wie config.allLights im Dashboard. [2026-09-05]
+# Erscheinen in HA unter Übersicht → Skripte; für Assist freigegeben (Einstellungen → Sprachassistenten).
+# Küche (Matter/Thread) läuft in einem eigenen parallel-Zweig: wenn die Birne nicht erreichbar ist, hängt der
+# Aufruf bis zum Matter-Timeout (~50 s) und würde sonst die Zigbee-Lichter blockieren.
+alle_lichter_aus:
+  alias: Alle Lichter aus
+  description: Schaltet alle Lichter im Haus aus (Wohnzimmer, Esszimmer, Stehlampe, Küche). Nutze dieses Werkzeug bei "alles aus", "alle Lichter aus", "Licht überall aus".
+  icon: mdi:lightbulb-group-off
+  mode: restart
+  sequence:
+  - parallel:
+    - action: homeassistant.turn_off
+      target:
+        entity_id:
+        - switch.wohnzimmer
+        - switch.esszimmer
+        - switch.stehtlampe_wohnzimmer
+        - light.esszimmer_deckenlampe
+      continue_on_error: true
+    - if:
+      - condition: state
+        entity_id: light.kajplats_e27_ws_globe_1521lm
+        state: 'on'
+      then:
+      - action: light.turn_off
+        target:
+          entity_id: light.kajplats_e27_ws_globe_1521lm
+        continue_on_error: true
+alle_lichter_an:
+  alias: Alle Lichter an
+  description: Schaltet alle Lichter im Haus an (Wohnzimmer, Esszimmer, Stehlampe, Küche). Nutze dieses Werkzeug bei "alles an", "alle Lichter an", "Licht überall an".
+  icon: mdi:lightbulb-group
+  mode: restart
+  sequence:
+  - parallel:
+    - sequence:
+      - action: homeassistant.turn_on
+        target:
+          entity_id:
+          - switch.wohnzimmer
+          - switch.esszimmer
+          - switch.stehtlampe_wohnzimmer
+        continue_on_error: true
+      - wait_template: "{{ states('light.esszimmer_deckenlampe') in ['on', 'off'] }}"
+        timeout: '00:00:20'
+        continue_on_timeout: true
+      - action: light.turn_on
+        target:
+          entity_id: light.esszimmer_deckenlampe
+        continue_on_error: true
+    - if:
+      - condition: state
+        entity_id: light.kajplats_e27_ws_globe_1521lm
+        state: 'off'
+      then:
+      - action: light.turn_on
+        target:
+          entity_id: light.kajplats_e27_ws_globe_1521lm
+        continue_on_error: true

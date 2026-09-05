@@ -99,8 +99,12 @@ export class MockBackend implements HaBackend {
     this.patch(m.entity_id, { attributes: { ...m.attributes, media_title: title, media_artist: artist, media_duration: dur, media_position: 0, media_position_updated_at: new Date().toISOString() } })
   }
 
-  async callService(domain: string, service: string, data: Record<string, any> = {}) {
+  async callService(domain: string, service: string, data: Record<string, any> = {}): Promise<void> {
     await new Promise((r) => setTimeout(r, 120)) // simulierte Latenz
+    if (domain === 'script' && (service === 'alle_lichter_aus' || service === 'alle_lichter_an')) {
+      // Demo: HA-Skripte „Alle Lichter aus/an“ nachbilden
+      return this.callService('homeassistant', service === 'alle_lichter_aus' ? 'turn_off' : 'turn_on', { entity_id: config.allLights })
+    }
     const ids: string[] = ([] as string[]).concat(data.entity_id ?? [])
     for (const id of ids) {
       const e = this.entities[id]

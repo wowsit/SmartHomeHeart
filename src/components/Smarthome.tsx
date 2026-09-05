@@ -157,17 +157,18 @@ export function SmarthomePage() {
   )
 }
 
-/** Übersicht: 3 Panels für die wichtigsten Lichter (config.lights) + „Alle Lichter aus" (config.allLights) */
+/** Übersicht: 3 Panels für die wichtigsten Lichter (config.lights) + Umschalter „Alle Lichter aus/an" (config.allLights ↔ HA-Skripte) */
 export function LightsWidget() {
   const entities = useEntities()
   const ha = useHa()
   const [busy, setBusy] = useState(false)
   const all = config.allLights.map((id) => entities[id]).filter(Boolean)
   const allOnCount = all.filter((e) => e.state === 'on').length
-  const allOff = async () => {
+  // Umschalter: solange etwas an ist → „Alle Lichter aus“, sonst → „Alle Lichter an“ (spiegelt script.alle_lichter_aus/_an in HA)
+  const toggleAll = async () => {
     if (busy || !all.length) return
     setBusy(true)
-    try { await ha.callService('homeassistant', 'turn_off', { entity_id: all.map((e) => e.entity_id) }) } finally { setTimeout(() => setBusy(false), 600) }
+    try { await ha.callService('script', allOnCount ? 'alle_lichter_aus' : 'alle_lichter_an') } finally { setTimeout(() => setBusy(false), 800) }
   }
   return (
     <div className="lights">
@@ -185,10 +186,10 @@ export function LightsWidget() {
           </button>
         )
       })}
-      <button className={`light-panel all-off ${allOnCount ? 'on' : ''}`} disabled={busy || !all.length} onClick={allOff}>
+      <button className={`light-panel all-off ${allOnCount ? 'on' : ''}`} disabled={busy || !all.length} onClick={toggleAll}>
         <span className="light-icon"><Icon.power size={30} /></span>
-        <span className="light-name">Alle Lichter aus</span>
-        <span className="light-state">{!all.length ? 'Nicht gefunden' : allOnCount ? `${allOnCount} an` : 'Alles aus'}</span>
+        <span className="light-name">{allOnCount ? 'Alle Lichter aus' : 'Alle Lichter an'}</span>
+        <span className="light-state">{!all.length ? 'Nicht gefunden' : allOnCount ? `${allOnCount} an · tippen: aus` : 'Alles aus · tippen: an'}</span>
       </button>
     </div>
   )
