@@ -4,7 +4,7 @@ import { createBackend, HaContext, useConnState, useEntities } from './ha/useHa'
 import { Clock } from './components/Clock'
 import { Weather } from './components/Weather'
 import { CalendarPage, CalendarWidget } from './components/Calendar'
-import { MediaPlayer } from './components/Media'
+import { MediaPlayer, QuickPlay } from './components/Media'
 import { LightsWidget, RoomSummary, SmarthomePage } from './components/Smarthome'
 import { Icon } from './components/Icons'
 import { Assistant } from './components/Assistant'
@@ -129,7 +129,7 @@ export default function App() {
           {page === 'home' && <HomePage openCalendar={() => setPage('calendar')} />}
           {page === 'smarthome' && <SmarthomePage />}
           {page === 'calendar' && <CalendarPage onBack={() => setPage('home')} />}
-          {page === 'music' && <div className="page music"><MediaPlayer large /></div>}
+          {page === 'music' && <div className="page music"><MediaPlayer large /><QuickPlay /></div>}
         </main>
         <Assistant />
         {idle && !woke && <Screensaver onWake={() => { setWoke(true); setPage(config.startPage) }} />}
