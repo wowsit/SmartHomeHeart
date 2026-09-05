@@ -427,9 +427,3 @@ h3 { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transfo
 .quick-btn.busy { opacity: .5; }
 
 /* Datum parallel zur Uhrzeit statt darunter (2026-09-05) */
-.clock-inline { display: flex; align-items: baseline; gap: var(--s-4); flex-wrap: wrap; }
-.clock-inline .clock-date { margin-top: 0; }
-.clock-big.clock-inline { justify-content: center; }
-.clock-big.clock-inline .clock-date { text-align: left; }
-.clock-compact.clock-inline { justify-content: flex-end; }
-.clock-compact.clock-inline .clock-date { margin-top: 0; }
