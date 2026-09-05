@@ -98,17 +98,35 @@ def describe(comp, summary):
             "recurring": "rrule" in comp}
 
 
+def search_all(title, day):
+    """Sucht in allen Kalendern aller Accounts."""
+    out = []
+    for _user, cal in all_calendars():
+        try:
+            out.extend(find_events(cal, title, day))
+        except Exception:  # noqa: BLE001  einzelner Kalender kaputt/leer -> weitersuchen
+            pass
+    return out
+
+
 def handle(path: str, body: dict) -> dict:
-    cal = get_calendar(body.get("calendar") or "hjem")
     title = body.get("title")
     day = body.get("date")
-    matches = find_events(cal, title, day)
+    wanted = (body.get("calendar") or "").strip()
+    if wanted:
+        cal = get_calendar(wanted)
+        matches = find_events(cal, title, day)
+        if not matches:
+            # Termin liegt oft in einem anderen Kalender als vermutet -> ueberall nachsehen
+            matches = search_all(title, day)
+    else:
+        matches = search_all(title, day)
     if path == "/find":
         return {"ok": True, "events": [describe(c, s) for _, c, s in matches]}
     if not title or not day:
         return {"ok": False, "error": "title und date sind nötig"}
     if not matches:
-        others = [describe(c, s) for _, c, s in find_events(cal, None, day)]
+        others = [describe(c, s) for _, c, s in search_all(None, day)]
         return {"ok": False, "error": f"Kein Termin '{title}' am {day} gefunden", "events_that_day": others}
     if len(matches) > 1:
         return {"ok": False, "error": "Mehrere passende Termine, bitte genauer", "candidates": [describe(c, s) for _, c, s in matches]}

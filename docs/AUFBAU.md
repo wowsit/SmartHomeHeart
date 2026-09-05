@@ -341,3 +341,17 @@ Bereits in einem Chat gepostete Secrets gelten als kompromittiert und werden rot
 5. Home Assistant aktualisieren (Stand 3.9.2026: 2026.8.1 installiert, 2026.9.0 verfügbar); Pi-Pakete aktualisieren (`sudo apt full-upgrade`).
 6. Container `whisper` (lokales Fallback-STT) endgültig entfernen, sobald Groq-STT sich bewährt hat (spart ~500 MB RAM).
 7. Optional: Automation für Bildschirm-Dimmen nachts (HA → `shell_command` auf dem Pi oder Chromium-Overlay).
+
+## 12. calhelper mit zwei iCloud-Accounts
+
+`calhelper` spricht jetzt beide Apple-Accounts an: `CALDAV_USER`/`CALDAV_PASS` plus `CALDAV_USER2`/`CALDAV_PASS2`
+(beliebig erweiterbar: `CALDAV_USER3` …). Kalender werden über alle Accounts hinweg gesucht.
+
+Das Feld `kalender` ist jetzt **optional**: ohne Angabe (oder wenn im angegebenen Kalender nichts passt) sucht
+calhelper in allen Kalendern beider Accounts. Vorher landete jede Anfrage ohne Kalenderangabe in `hjem` und
+Termine aus `Arbeit`/`Privat`/`Familie` wurden nicht gefunden.
+
+**Falle beim Deploy:** nach `docker build` reicht `docker restart` **nicht** – der Container läuft weiter mit dem
+alten Image. Immer `docker rm -f calhelper && docker run …` mit allen Env-Variablen.
+
+Die App-Passwörter stehen ausschließlich in den Container-Env-Variablen auf dem Pi, nie im Repo.
