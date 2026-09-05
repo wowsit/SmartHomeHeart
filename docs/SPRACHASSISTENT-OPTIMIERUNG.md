@@ -140,3 +140,29 @@ bei „Ich höre zu …“. Fix: Container mit `--dns 192.168.178.1 --dns 1.1.1.
 
 **Offen:** `calhelper` läuft nur mit iCloud-Account 1 und findet die Kalender des zweiten Accounts
 (Kalender/Arbeit/Privat/Familie) nicht → Löschen/Verschieben schlägt dort mit „Kalender nicht gefunden“ fehl.
+
+### Nachtrag: neue Skripte müssen für Assist freigegeben werden
+`script.musik_abspielen` stand in `scripts.yaml` und lief per Service-Call korrekt, tauchte aber nicht in
+`homeassistant/expose_entity/list` auf – Claude hat das Werkzeug also nie gesehen und weiter
+`HassMediaSearchAndPlay` benutzt (daher „Ultralight Beam“ statt „Homecoming“). Freigabe per WebSocket:
+
+```json
+{"type": "homeassistant/expose_entity", "assistants": ["conversation"],
+ "entity_ids": ["script.musik_abspielen"], "should_expose": true}
+```
+
+Zusätzlich sagt der Prompt jetzt ausdrücklich: bei Musikwünschen immer „Musik abspielen“, nie die
+allgemeine Mediensuche, und nicht nach Gerät/Raum fragen. Getestet: Homecoming, Ultralight Beam, Bound 2 – alle korrekt.
+
+### Der eigentliche Grund: `prefer_local_intents` in der Pipeline
+Die Pipeline „Haus (Claude)“ hatte `prefer_local_intents: true`. Damit versucht Home Assistant **zuerst**
+seine eingebauten Satzvorlagen zu matchen und ruft Claude nur, wenn nichts passt. „Spiele X von Y“ passt auf
+`HassMediaSearchAndPlay` – Claude (und damit `script.musik_abspielen`) kam per Sprache also nie zum Zug,
+während Tests direkt gegen `conversation.process` mit `agent_id: conversation.claude_conversation`
+korrekt liefen. Deshalb sah es so aus, als sei der Fix wirkungslos.
+
+Gesetzt via `assist_pipeline/pipeline/update` (WS-API), Pipeline `01m1kftxxnw2zmtn2tbvpgc9tx`:
+`"prefer_local_intents": false`. Messung danach: Musik 5,9 s (inkl. Katalogsuche), Wetterfrage 2,1 s.
+
+**Lehre für Tests:** Sprachwege immer über `assist_pipeline/run` mit der echten Pipeline testen, nicht über
+`conversation/process` mit direktem `agent_id` – sonst wird die lokale Intent-Vorstufe übersprungen.

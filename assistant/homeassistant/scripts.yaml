@@ -144,3 +144,45 @@ termin_verschieben:
     response_variable: r
   - stop: done
     response_variable: r
+musik_abspielen:
+  alias: Musik abspielen
+  description: Spielt einen bestimmten Song, ein Album oder eine Playlist auf der Wohnzimmer-Box ab.
+    Nutze dieses Werkzeug immer, wenn der Nutzer Musik hören möchte – NICHT die allgemeine Mediensuche,
+    denn die trifft bei Songwünschen oft ein Album und spielt dann den falschen Titel.
+    Nenne bei einem Songwunsch Titel und Interpret getrennt und setze art auf 'track'.
+  mode: single
+  icon: mdi:music
+  fields:
+    titel:
+      name: Titel
+      description: Songtitel, Albumtitel oder Playlist-Name, z.B. 'Bohemian Rhapsody'
+      required: true
+      selector:
+        text: {}
+    interpret:
+      name: Interpret
+      description: 'Optional: Künstler/Band, z.B. ''Queen'' – erhöht die Trefferquote deutlich'
+      required: false
+      selector:
+        text: {}
+    art:
+      name: Art
+      description: 'track (einzelner Song, Standard), album, playlist oder artist'
+      required: false
+      default: track
+      selector:
+        select:
+          options:
+          - track
+          - album
+          - playlist
+          - artist
+  sequence:
+  - action: music_assistant.play_media
+    target:
+      entity_id: media_player.wohnzimmer_b06
+    data:
+      media_id: '{{ titel }}{% if interpret %} {{ interpret }}{% endif %}'
+      media_type: '{{ art | default(''track'') }}'
+      enqueue: replace
+      radio_mode: false
