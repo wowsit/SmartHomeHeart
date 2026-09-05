@@ -355,3 +355,17 @@ Termine aus `Arbeit`/`Privat`/`Familie` wurden nicht gefunden.
 alten Image. Immer `docker rm -f calhelper && docker run …` mit allen Env-Variablen.
 
 Die App-Passwörter stehen ausschließlich in den Container-Env-Variablen auf dem Pi, nie im Repo.
+## 13. Alle iCloud-Kalender im Dashboard (2026-09-05)
+
+Die CalDAV-Integration von Account 2 kannte anfangs nur einen Teil der Kalender – `Schule` (die mit Terminen)
+und `Calendar` fehlten. **Fix:** Config-Entry der Integration neu laden
+(`POST /api/config/config_entries/entry/<entry_id>/reload`), danach existieren `calendar.schule` und
+`calendar.calendar`. Neue iCloud-Kalender tauchen also erst nach einem Reload auf.
+
+Farben stehen in `src/config.ts` (`calendars[]`), CSS-Variablen in `src/styles.css`:
+Seit 2026-09-05 nach Besitzer: Fynns Kalender (Account 1: `hjem`, `arbeid`) = **grün**,
+Emilias Kalender (Account 2: `privat`, `arbeit`, `schule`, `kalender`, `familie`, `calendar`) = **pink**.
+
+**Falle beim Deploy:** `dist` auf dem Pi niemals mit `rm -rf dist && mkdir dist` ersetzen – der Bind-Mount des
+nginx-Containers zeigt dann ins Leere (HTTP 500, "rewrite or internal redirection cycle"). Entweder nur den
+Inhalt ersetzen oder danach `docker restart pi-dashboard`.
