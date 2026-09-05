@@ -34,6 +34,10 @@ kalendereintrag_erstellen:
           options:
           - hjem
           - arbeid
+          - kalender
+          - arbeit
+          - privat
+          - familie
     beschreibung:
       name: Beschreibung
       description: Optionale Notiz zum Termin
@@ -69,20 +73,23 @@ termin_loeschen:
         date: {}
     kalender:
       name: Kalender
-      description: '''hjem'' (privat, Standard), ''arbeid'' (Arbeit), ''kalender'' (Geburtstage), ''arbeit'', ''privat'' oder ''familie'''
+      description: 'Optional. Leer lassen, dann werden alle Kalender durchsucht. Sonst: ''hjem'', ''arbeid'', ''kalender'', ''arbeit'', ''privat'' oder ''familie'''
       required: false
-      default: hjem
       selector:
         select:
           options:
           - hjem
           - arbeid
+          - kalender
+          - arbeit
+          - privat
+          - familie
   sequence:
   - action: rest_command.calhelper_delete
     data:
       titel: '{{ titel }}'
       datum: '{{ datum }}'
-      kalender: '{{ kalender | default(''hjem'') }}'
+      kalender: '{{ kalender | default('''') }}'
     response_variable: r
   - stop: done
     response_variable: r
@@ -124,14 +131,17 @@ termin_verschieben:
         text: {}
     kalender:
       name: Kalender
-      description: '''hjem'' (privat, Standard), ''arbeid'' (Arbeit), ''kalender'' (Geburtstage), ''arbeit'', ''privat'' oder ''familie'''
+      description: 'Optional. Leer lassen, dann werden alle Kalender durchsucht. Sonst: ''hjem'', ''arbeid'', ''kalender'', ''arbeit'', ''privat'' oder ''familie'''
       required: false
-      default: hjem
       selector:
         select:
           options:
           - hjem
           - arbeid
+          - kalender
+          - arbeit
+          - privat
+          - familie
   sequence:
   - action: rest_command.calhelper_move
     data:
@@ -140,7 +150,7 @@ termin_verschieben:
       neuer_start: '{{ neuer_start }}'
       neues_ende: '{{ neues_ende | default('''') }}'
       neuer_titel: '{{ neuer_titel | default('''') }}'
-      kalender: '{{ kalender | default(''hjem'') }}'
+      kalender: '{{ kalender | default('''') }}'
     response_variable: r
   - stop: done
     response_variable: r

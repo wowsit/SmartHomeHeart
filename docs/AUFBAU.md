@@ -342,6 +342,19 @@ Bereits in einem Chat gepostete Secrets gelten als kompromittiert und werden rot
 6. Container `whisper` (lokales Fallback-STT) endgültig entfernen, sobald Groq-STT sich bewährt hat (spart ~500 MB RAM).
 7. Optional: Automation für Bildschirm-Dimmen nachts (HA → `shell_command` auf dem Pi oder Chromium-Overlay).
 
+## 12. calhelper mit zwei iCloud-Accounts
+
+`calhelper` spricht jetzt beide Apple-Accounts an: `CALDAV_USER`/`CALDAV_PASS` plus `CALDAV_USER2`/`CALDAV_PASS2`
+(beliebig erweiterbar: `CALDAV_USER3` …). Kalender werden über alle Accounts hinweg gesucht.
+
+Das Feld `kalender` ist jetzt **optional**: ohne Angabe (oder wenn im angegebenen Kalender nichts passt) sucht
+calhelper in allen Kalendern beider Accounts. Vorher landete jede Anfrage ohne Kalenderangabe in `hjem` und
+Termine aus `Arbeit`/`Privat`/`Familie` wurden nicht gefunden.
+
+**Falle beim Deploy:** nach `docker build` reicht `docker restart` **nicht** – der Container läuft weiter mit dem
+alten Image. Immer `docker rm -f calhelper && docker run …` mit allen Env-Variablen.
+
+Die App-Passwörter stehen ausschließlich in den Container-Env-Variablen auf dem Pi, nie im Repo.
 ## 13. Alle iCloud-Kalender im Dashboard (2026-09-05)
 
 Die CalDAV-Integration von Account 2 kannte anfangs nur einen Teil der Kalender – `Schule` (die mit Terminen)
@@ -350,8 +363,8 @@ und `Calendar` fehlten. **Fix:** Config-Entry der Integration neu laden
 `calendar.calendar`. Neue iCloud-Kalender tauchen also erst nach einem Reload auf.
 
 Farben stehen in `src/config.ts` (`calendars[]`), CSS-Variablen in `src/styles.css`:
-Arbeit = grün, Familie = gelb, Calendar = dunkelblau (navy), Schule = orange, Kalender = pink,
-Privat = lila, Hjem = petrol, Arbeid = blau.
+Seit 2026-09-05 nach Besitzer: Fynns Kalender (Account 1: `hjem`, `arbeid`) = **grün**,
+Emilias Kalender (Account 2: `privat`, `arbeit`, `schule`, `kalender`, `familie`, `calendar`) = **pink**.
 
 **Falle beim Deploy:** `dist` auf dem Pi niemals mit `rm -rf dist && mkdir dist` ersetzen – der Bind-Mount des
 nginx-Containers zeigt dann ins Leere (HTTP 500, "rewrite or internal redirection cycle"). Entweder nur den

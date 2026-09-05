@@ -4,7 +4,8 @@ HA's caldav integration can only create events, so this sidecar exposes:
   POST /delete  {"calendar": "hjem", "title": "Zahnarzt", "date": "2026-09-05"}
   POST /move    {..., "new_start": "2026-09-07 10:00:00", "new_end": optional}
   POST /find    {"calendar", "title"?, "date"?}  -> list of matching events
-Env: CALDAV_URL, CALDAV_USER, CALDAV_PASS, TZ (default Europe/Berlin), PORT.
+Env: CALDAV_URL, CALDAV_USER, CALDAV_PASS, optional CALDAV_USER2/CALDAV_PASS2 (zweiter
+     iCloud-Account), TZ (default Europe/Berlin), PORT.
 """
 import json
 import os
@@ -23,20 +24,36 @@ def norm(s: str) -> str:
     return "".join(c for c in s if c.isalnum())
 
 
-def client():
-    return caldav.DAVClient(
-        url=os.environ["CALDAV_URL"],
-        username=os.environ["CALDAV_USER"],
-        password=os.environ["CALDAV_PASS"],
-    )
+def accounts():
+    """Alle konfigurierten iCloud-Accounts: CALDAV_USER/PASS plus CALDAV_USER2/PASS2 usw."""
+    url = os.environ["CALDAV_URL"]
+    out = [(os.environ["CALDAV_USER"], os.environ["CALDAV_PASS"])]
+    i = 2
+    while os.environ.get(f"CALDAV_USER{i}"):
+        out.append((os.environ[f"CALDAV_USER{i}"], os.environ[f"CALDAV_PASS{i}"]))
+        i += 1
+    return [(u, caldav.DAVClient(url=url, username=u, password=p)) for u, p in out]
+
+
+def all_calendars():
+    """(Account, Kalender) ueber alle Accounts hinweg; Fehler eines Accounts blockieren die anderen nicht."""
+    found, errors = [], []
+    for user, cl in accounts():
+        try:
+            found.extend((user, c) for c in cl.principal().calendars())
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{user}: {exc}")
+    if not found and errors:
+        raise ValueError("Kein CalDAV-Account erreichbar: " + "; ".join(errors))
+    return found
 
 
 def get_calendar(name: str):
-    cals = client().principal().calendars()
-    for c in cals:
+    cals = all_calendars()
+    for _user, c in cals:
         if norm(str(c.name)) == norm(name):
             return c
-    raise ValueError(f"Kalender '{name}' nicht gefunden. Vorhanden: {[str(c.name) for c in cals]}")
+    raise ValueError(f"Kalender '{name}' nicht gefunden. Vorhanden: {[str(c.name) for _u, c in cals]}")
 
 
 def to_local(dt):
@@ -81,17 +98,35 @@ def describe(comp, summary):
             "recurring": "rrule" in comp}
 
 
+def search_all(title, day):
+    """Sucht in allen Kalendern aller Accounts."""
+    out = []
+    for _user, cal in all_calendars():
+        try:
+            out.extend(find_events(cal, title, day))
+        except Exception:  # noqa: BLE001  einzelner Kalender kaputt/leer -> weitersuchen
+            pass
+    return out
+
+
 def handle(path: str, body: dict) -> dict:
-    cal = get_calendar(body.get("calendar") or "hjem")
     title = body.get("title")
     day = body.get("date")
-    matches = find_events(cal, title, day)
+    wanted = (body.get("calendar") or "").strip()
+    if wanted:
+        cal = get_calendar(wanted)
+        matches = find_events(cal, title, day)
+        if not matches:
+            # Termin liegt oft in einem anderen Kalender als vermutet -> ueberall nachsehen
+            matches = search_all(title, day)
+    else:
+        matches = search_all(title, day)
     if path == "/find":
         return {"ok": True, "events": [describe(c, s) for _, c, s in matches]}
     if not title or not day:
         return {"ok": False, "error": "title und date sind nötig"}
     if not matches:
-        others = [describe(c, s) for _, c, s in find_events(cal, None, day)]
+        others = [describe(c, s) for _, c, s in search_all(None, day)]
         return {"ok": False, "error": f"Kein Termin '{title}' am {day} gefunden", "events_that_day": others}
     if len(matches) > 1:
         return {"ok": False, "error": "Mehrere passende Termine, bitte genauer", "candidates": [describe(c, s) for _, c, s in matches]}
