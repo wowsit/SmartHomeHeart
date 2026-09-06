@@ -436,3 +436,36 @@ Zahnrad „Einstell." in der Navigation → Sheet mit drei Abschnitten. Alles wi
   Nochmal tippen dreht die Richtung sofort um. Die HA-Skripte bleiben für Assist („Hey Haus, alles aus") bestehen.
 - Auch die einzelnen Licht-Panels zeigen den gewünschten Zustand sofort („Schalte an…") und nutzen
   `turn_on`/`turn_off` statt `toggle`, damit doppeltes Tippen nichts mehr zurückschaltet.
+
+## 18. Eigenes Wake Word „hey Haus" (2026-09-06)
+
+Trainiert mit `openWakeWord` auf Kaggle (kostenlose GPU, Kernel `fynnhirth/hey-haus-training`), Rezept und Fallen:
+`skills/smarthomeheart/references/wake_word_training.md` (bei Viktor). Ablauf: Piper erzeugt ~15.000 synthetische
+„hey Haus"-Clips + 15.000 Negativclips, dazu Raumhall und Hintergrundgeräusche (AudioSet), 30.000 Trainingsschritte,
+Laufzeit ~3 h.
+
+**Ergebnis Version 4:** Accuracy 0.737, Recall 0.475, 1,15 Fehlauslöser pro Stunde. Heißt: solide gegen
+Fehlauslöser, erkennt aber im verrauschten Testsatz nur etwa jeden zweiten Ruf. Version 3 war unbrauchbar
+(Recall 0.015, 22 Fehlauslöser/h), weil Piper bei der kurzen Phrase „hey Haus" Kauderwelsch erzeugt hat –
+Fix: Komma an die Phrase hängen, `noise_scale`/`noise_scale_w` 0.333, `min_phoneme_count` 300.
+
+**Deploy auf dem Pi:**
+
+```
+# ONNX aus dem Kaggle-Output nach tflite wandeln (openWakeWord-Bordmittel scheitern an onnx_tf):
+uv run --with tensorflow-cpu --with onnx --with onnxruntime python oww_onnx_to_tflite.py hey_haus.onnx hey_haus.tflite
+scp hey_haus.tflite homehole:~/openwakeword/custom/     # Container lädt nur *.tflite
+docker rm -f openwakeword && docker run -d --name openwakeword --restart unless-stopped \
+  -p 127.0.0.1:10500:10400 -v /home/wowsit/openwakeword/custom:/custom \
+  rhasspy/wyoming-openwakeword --preload-model ok_nabu --preload-model hey_haus \
+  --custom-model-dir /custom --threshold 0.4 --trigger-level 1
+```
+
+`docker restart` genügt **nicht**, der Container muss neu erstellt werden. Prüfen: ein `describe` auf
+127.0.0.1:10500 muss `hey_haus` in der Modell-Liste zeigen. `--threshold` runter = erkennt eher, löst aber
+öfter falsch aus; `--trigger-level` = wie viele Treffer hintereinander nötig sind.
+
+**Noch kein Nutzen ohne Satellit:** Es gibt weiterhin kein Mikrofon, das dauerhaft lauscht (siehe
+`SPRACHASSISTENT-OPTIMIERUNG.md`, Abschnitt 5). Das Wake Word wird erst mit einem Satelliten (HA Voice
+Preview Edition oder Pi + USB-Mikro mit `wyoming-satellite`) benutzbar; in der Pipeline „Haus (Claude)"
+ist dann unter Wake Word `hey_haus` statt `hey_jarvis` zu wählen.
