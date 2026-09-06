@@ -113,7 +113,7 @@ h3 { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transfo
 
 /* ===== Uhr ===== */
 .clock-time { font-size: var(--t-display); font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
-.clock-date { font-size: var(--t-xl); color: var(--text-2); margin-top: var(--s-3); text-transform: capitalize; }
+.clock-date { font-size: var(--t-xl); color: var(--text-2); margin-top: var(--s-3); text-transform: capitalize; text-align: left; }
 .clock-big .clock-time { font-size: var(--t-hero); }
 .clock-big .clock-date { font-size: var(--t-3xl); text-align: center; }
 

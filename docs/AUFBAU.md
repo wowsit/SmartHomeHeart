@@ -337,7 +337,7 @@ Bereits in einem Chat gepostete Secrets gelten als kompromittiert und werden rot
 1. Echte Entity-IDs für Lichter, Räume, Szenen, Media-Player in `config.ts` eintragen (Kalender und Wetter sind echt, Rest noch Platzhalter).
 2. YouTube Music: HA-Integration (HACS „YouTube Music“ oder Music Assistant) einrichten → `media_player`-Entity.
 3. Display kaufen, Kiosk einrichten (Kap. 6.5), Rotation + Touch-Kalibrierung verifizieren.
-4. Feste IP für den Pi in der Fritz!Box (aktuell DHCP `192.168.178.151`).
+4. Feste IP für den Pi in der Fritz!Box (aktuell DHCP `192.168.178.151` WLAN, `192.168.178.52` Kabel). Entscheidung Kabel oder WLAN – nicht beides (siehe Kap. 15).
 5. Home Assistant aktualisieren (Stand 3.9.2026: 2026.8.1 installiert, 2026.9.0 verfügbar); Pi-Pakete aktualisieren (`sudo apt full-upgrade`).
 6. Container `whisper` (lokales Fallback-STT) endgültig entfernen, sobald Groq-STT sich bewährt hat (spart ~500 MB RAM).
 7. Optional: Automation für Bildschirm-Dimmen nachts (HA → `shell_command` auf dem Pi oder Chromium-Overlay).
@@ -385,6 +385,25 @@ und nie im Repo.
 
 Beispielsätze: „Hey Haus, sag Viktor, er soll die Wetterkachel größer machen." ·
 „Hey Haus, Auftrag an Viktor: Musik-Lautstärke beim Start auf 30 Prozent."
+
+## 15. Thread-Border-Router & Küchenlicht (2026-09-05)
+
+Das Küchenlicht (IKEA KAJPLATS, Matter über Thread) war „nicht verfügbar“. Zwei Ursachen:
+
+1. Container `otbr` (OpenThread Border Router, SONOFF-MG24-Dongle, `~/homeassistant-stack/docker-compose.yml`) war nach
+   Abziehen des Dongles gestorben („RCP device disconnected“) und kam nach dem Pi-Reboot nicht wieder, weil das
+   USB-Gerät zur Startzeit fehlte – `restart: always` hilft dann nicht. **Fix:** Cron (User `wowsit`, alle 5 Min)
+   startet `otbr`, wenn er nicht läuft.
+2. Pi hing per Kabel **und** WLAN im selben Netz. Der Border-Router kündigt das Thread-Präfix (`fd66:…::/64`) per RA auf
+   `wlan0` an; `eth0` hat diese Ankündigung empfangen und eine Route über eth0 (Metrik 100) eingetragen, die die
+   Kernel-Route über `wpan0` (Metrik 256) verdrängt. Matter-Server erreichte die Lampe nicht (CASE-Timeout), obwohl
+   `ot-ctl ping` ging. **Fix:** IPv6 auf eth0 aus (`nmcli con mod netplan-eth0 ipv6.method disabled`).
+
+Schnelldiagnose: `docker ps -a | grep otbr` · `docker exec otbr ot-ctl state` (router/leader) ·
+`docker exec otbr ot-ctl srp server service` (Lampen-Adresse) · `ping -6 <Adresse>` vom Host · `ip -6 route | grep fd66`
+(darf nur `dev wpan0` zeigen). Dongles nicht umstecken; sie sind per Seriennummer eingebunden, aber Thread braucht danach Minuten.
+
+Anleitung, wie Viktor günstig neu eingebunden wird: `docs/VIKTOR-SETUP.md`.
 
 ## 16. Licht-Bedienung (2026-09-05)
 
