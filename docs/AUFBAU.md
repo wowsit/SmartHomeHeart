@@ -415,3 +415,24 @@ Anleitung, wie Viktor günstig neu eingebunden wird: `docs/VIKTOR-SETUP.md`.
   erreichbare Birne die Zigbee-Lichter nicht ~50 s blockiert. Im Dashboard ist das 4. Panel des Licht-Widgets ein
   Umschalter: solange etwas an ist „Alle Lichter aus“, sonst „Alle Lichter an“; Zustandsanzeige über `config.allLights`.
   Neue Lichter in beiden Listen eintragen.
+
+## 17. Einstellungen im Dashboard: Dunkelmodus & Lichter-Auswahl (2026-09-06)
+
+Zahnrad „Einstell." in der Navigation → Sheet mit drei Abschnitten. Alles wird **pro Gerät** in
+`localStorage` gespeichert (`shh.settings.v1`, siehe `src/settings.ts`) und wirkt sofort ohne Neu-Build.
+`src/config.ts` bleibt die Voreinstellung; „Zurücksetzen" löscht den lokalen Eintrag.
+
+- **Erscheinungsbild:** Hell / Dunkel / Automatisch. Automatisch folgt `sun.sun` aus HA
+  (`below_horizon` → dunkel), ohne HA-Verbindung 20–7 Uhr. Technisch setzt `ThemeApplier`
+  `data-theme` am `<html>`; die dunklen Werte in `styles.css` spiegeln die Graustufen-Leiter,
+  damit alle „dunkel auf hell"-Regeln automatisch invertieren.
+- **Lichter auf der Startseite:** bis zu 4 beliebige `light.*`/`switch.*`-Entities, Reihenfolge =
+  Antipp-Reihenfolge. Das Widget rechnet die Spalten dynamisch (gewählte Lichter + „Alle Lichter"-Knopf).
+- **„Alle Lichter"-Knopf:** die geschalteten Entities sind jetzt ebenfalls im Dashboard wählbar
+  (Voreinstellung `config.allLights`). Der Knopf schaltet **direkt** `homeassistant.turn_on/off`
+  statt `script.alle_lichter_aus/_an` – dadurch stimmen Anzeige und Wirkung immer überein.
+  Er zeigt „Schalte aus… 3/5", fasst nach 2,5 s bei den Lichtern einzeln nach, die den Zielzustand
+  nicht erreicht haben (Zigbee/Matter verschluckt Sammelbefehle), und gibt nach 9 s auf.
+  Nochmal tippen dreht die Richtung sofort um. Die HA-Skripte bleiben für Assist („Hey Haus, alles aus") bestehen.
+- Auch die einzelnen Licht-Panels zeigen den gewünschten Zustand sofort („Schalte an…") und nutzen
+  `turn_on`/`turn_off` statt `toggle`, damit doppeltes Tippen nichts mehr zurückschaltet.

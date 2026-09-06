@@ -431,3 +431,93 @@ h3 { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transfo
 .quick-btn.busy { opacity: .5; }
 
 /* Datum parallel zur Uhrzeit statt darunter (2026-09-05) */
+
+/* ============================================================
+   Dunkelmodus (Einstellungen → Erscheinungsbild)
+   Die Graustufen-Leiter wird gespiegelt, damit alle Regeln, die
+   „dunkel auf hell" meinen (--g-900 auf --g-50), automatisch
+   „hell auf dunkel" werden. Ausnahmen: Flächen, die schon immer
+   dunkel sind (Untertitel/Assist-Overlay) – die stehen unten.
+   ============================================================ */
+:root[data-theme='dark'] {
+  --g-950: hsl(36, 40%, 98%);
+  --g-900: hsl(34, 30%, 94%);
+  --g-800: hsl(32, 22%, 88%);
+  --g-700: hsl(30, 12%, 72%);
+  --g-600: hsl(30, 10%, 60%);
+  --g-500: hsl(30, 10%, 48%);
+  --g-400: hsl(30, 10%, 54%);
+  --g-300: hsl(30, 12%, 26%);
+  --g-200: hsl(30, 13%, 24%);
+  --g-100: hsl(30, 14%, 17%);
+  --g-50:  hsl(30, 15%, 11%);
+
+  --wall: hsl(30, 14%, 9%);
+  --wall-deep: hsl(30, 14%, 7%);
+  --bg: var(--wall);
+  --surface: hsl(30, 13%, 15%);
+  --surface-2: hsl(30, 12%, 21%);
+  --text: hsl(34, 25%, 94%);
+  --text-2: hsl(32, 14%, 80%);
+  --muted: hsl(30, 10%, 66%);
+  --faint: hsl(30, 9%, 58%);
+  --hairline: hsla(36, 30%, 90%, .14);
+
+  --amber-50: hsl(34, 40%, 16%);
+  --amber-100: hsl(34, 45%, 24%);
+  --amber-700: hsl(41, 88%, 74%);
+  --amber-900: hsl(30, 25%, 12%);
+  --orange-50: hsl(18, 40%, 18%); --orange-700: hsl(22, 85%, 68%);
+  --green-500: hsl(150, 40%, 52%);
+  --blue-500: hsl(212, 75%, 62%);
+  --red-500: hsl(4, 75%, 66%);
+
+  --elev-1: 0 1px 2px hsla(0, 0%, 0%, .5), 0 6px 16px hsla(0, 0%, 0%, .4), inset 0 1px 0 hsla(0, 0%, 100%, .05);
+  --elev-2: 0 2px 6px hsla(0, 0%, 0%, .55), 0 16px 40px hsla(0, 0%, 0%, .5), inset 0 1px 0 hsla(0, 0%, 100%, .07);
+  color-scheme: dark;
+}
+/* Flächen, die auch im hellen Modus dunkel sind: feste helle Schrift behalten */
+:root[data-theme='dark'] .captions { color: hsl(36, 40%, 98%); }
+:root[data-theme='dark'] .captions-status { color: hsl(32, 22%, 88%); }
+:root[data-theme='dark'] .captions-heard { color: hsl(30, 12%, 70%); }
+:root[data-theme='dark'] .dots i { background: hsl(30, 12%, 70%); }
+:root[data-theme='dark'] .assist.on .assist-btn { background: hsl(30, 13%, 28%); color: hsl(36, 40%, 98%); }
+/* Aufhellungen statt Abdunklungen */
+:root[data-theme='dark'] .nav-btn:active { background: hsla(0, 0%, 100%, .08); }
+:root[data-theme='dark'] .conn { background: hsla(0, 0%, 100%, .07); }
+:root[data-theme='dark'] .sheet-backdrop { background: hsla(30, 20%, 3%, .62); }
+:root[data-theme='dark'] .slider::-webkit-slider-thumb { background: hsl(32, 22%, 88%); }
+:root[data-theme='dark'] .slider::-moz-range-thumb { background: hsl(32, 22%, 88%); }
+
+/* ===== Licht-Panels: Zustand „wird geschaltet" ===== */
+.light-panel.pending { opacity: .92; }
+.light-panel.pending .light-icon { animation: light-pulse 1.1s ease-in-out infinite; }
+.light-panel.pending .light-state { color: var(--text-2); font-weight: 500; }
+@keyframes light-pulse { 0%, 100% { transform: scale(1); opacity: 1 } 50% { transform: scale(.9); opacity: .6 } }
+
+/* ===== Einstellungen ===== */
+.settings-sheet { max-height: 1500px; }
+.settings-scroll { display: flex; flex-direction: column; gap: var(--s-6); overflow-y: auto; max-height: 1120px; -webkit-overflow-scrolling: touch; }
+.settings-scroll section { min-width: 0; }
+.hint { font-size: var(--t-sm); color: var(--muted); margin: var(--s-3) 0 0; }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); }
+.seg-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-2);
+  height: 120px; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); font-size: var(--t-base); font-weight: 500; }
+.seg-btn.on { background: var(--g-900); color: var(--g-50); font-weight: 600; }
+.seg-btn:active { transform: scale(.98); }
+.pick-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.pick { display: flex; align-items: center; gap: var(--s-3); min-height: 88px; padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius-sm); background: var(--surface-2); text-align: left; min-width: 0; }
+.pick.on { background: var(--amber-100); color: var(--amber-900); }
+.pick:active { transform: scale(.98); }
+.pick-num { width: 40px; height: 40px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: var(--t-base); font-weight: 700; background: hsla(30, 20%, 50%, .18); }
+.pick.on .pick-num { background: var(--amber-500); color: var(--amber-900); }
+.pick-text { display: flex; flex-direction: column; min-width: 0; }
+.pick-label { font-size: var(--t-base); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick-id { font-size: var(--t-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick.on .pick-id { color: var(--amber-700); }
+.cta.grow { flex: 1; padding: 0 var(--s-6); }
+:root[data-theme='dark'] .pick.on { color: hsl(41, 88%, 86%); }
+:root[data-theme='dark'] .pick.on .pick-id { color: hsl(41, 55%, 72%); }
+:root[data-theme='dark'] .pick.on .pick-num { color: hsl(30, 30%, 12%); }
