@@ -8,6 +8,7 @@ import { MediaPlayer, QuickPlay } from './components/Media'
 import { LightsWidget, RoomSummary, SmarthomePage } from './components/Smarthome'
 import { Icon } from './components/Icons'
 import { Assistant } from './components/Assistant'
+import { SettingsSheet, ThemeApplier } from './components/Settings'
 
 type Page = 'home' | 'smarthome' | 'calendar' | 'music'
 const NAV: { id: Page; label: string; icon: keyof typeof Icon }[] = [
@@ -111,6 +112,7 @@ export default function App() {
   const [woke, setWoke] = useState(false)
   if (!idle && woke) setWoke(false) // Reset beim Aufwachen – State-Anpassung im Render statt Effekt
   const kiosk = params.get('kiosk') === '1'
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
     <HaContext.Provider value={ha}>
@@ -123,6 +125,9 @@ export default function App() {
             </button>
           ) })}
           <div className="nav-spacer" />
+          <button className={`nav-btn ${settingsOpen ? 'active' : ''}`} onClick={() => setSettingsOpen(true)} aria-label="Einstellungen">
+            <Icon.cog size={30} /><span>Einstell.</span>
+          </button>
           <ConnBadge />
         </nav>
         <main className="main">
@@ -132,6 +137,8 @@ export default function App() {
           {page === 'music' && <div className="page music"><MediaPlayer large /><QuickPlay /></div>}
         </main>
         <Assistant />
+        <ThemeApplier />
+        {settingsOpen && <SettingsSheet onClose={() => setSettingsOpen(false)} />}
         {idle && !woke && <Screensaver onWake={() => { setWoke(true); setPage(config.startPage) }} />}
       </div>
     </HaContext.Provider>

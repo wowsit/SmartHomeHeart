@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { config, type RoomConfig } from '../config'
+import { MAX_LIGHTS, lightLabel, useSettings } from '../settings'
 import { useEntities, useHa } from '../ha/useHa'
 import type { EntityMap, HaEntity } from '../ha/types'
 import { Icon } from './Icons'
@@ -157,40 +158,101 @@ export function SmarthomePage() {
   )
 }
 
-/** Übersicht: 3 Panels für die wichtigsten Lichter (config.lights) + Umschalter „Alle Lichter aus/an" (config.allLights ↔ HA-Skripte) */
-export function LightsWidget() {
-  const entities = useEntities()
+/** Ein Licht-Panel der Startseite. Zeigt sofort den gewünschten Zustand („optimistisch"),
+ *  bis Home Assistant den echten liefert – sonst tippt man auf dem Touch zweimal. */
+function LightPanel({ id, name, e }: { id: string; name?: string; e?: HaEntity }) {
   const ha = useHa()
-  const [busy, setBusy] = useState(false)
-  const all = config.allLights.map((id) => entities[id]).filter(Boolean)
-  const allOnCount = all.filter((e) => e.state === 'on').length
-  // Umschalter: solange etwas an ist → „Alle Lichter aus“, sonst → „Alle Lichter an“ (spiegelt script.alle_lichter_aus/_an in HA)
-  const toggleAll = async () => {
-    if (busy || !all.length) return
-    setBusy(true)
-    try { await ha.callService('script', allOnCount ? 'alle_lichter_aus' : 'alle_lichter_an') } finally { setTimeout(() => setBusy(false), 800) }
+  const on = e?.state === 'on'
+  const [wish, setWish] = useState<boolean | null>(null)
+  if (wish !== null && wish === on) setWish(null) // HA hat den Wunsch übernommen – State-Anpassung im Render statt Effekt
+  useEffect(() => {
+    if (wish === null) return
+    const t = setTimeout(() => setWish(null), 6000) // HA hat nicht reagiert: echten Zustand wieder zeigen
+    return () => clearTimeout(t)
+  }, [wish])
+
+  const shown = wish ?? on
+  const b = e?.attributes.brightness as number | undefined
+  const pct = shown && wish === null && b != null ? Math.round((b / 255) * 100) : null
+  const press = () => {
+    if (!e) return
+    const next = !shown
+    setWish(next)
+    ha.callService(domainOf(id), next ? 'turn_on' : 'turn_off', { entity_id: id })
   }
   return (
-    <div className="lights">
-      {config.lights.slice(0, 3).map(({ entity: id, name }) => {
-        const e = entities[id]
-        const on = e?.state === 'on'
-        const b = e?.attributes.brightness as number | undefined
-        const pct = on && b != null ? Math.round((b / 255) * 100) : null
-        return (
-          <button key={id} className={`light-panel ${on ? 'on' : ''} ${e ? '' : 'missing'}`} disabled={!e}
-            onClick={() => ha.callService(domainOf(id), 'toggle', { entity_id: id })}>
-            <span className="light-icon"><Icon.bulb size={30} /></span>
-            <span className="light-name">{name ?? e?.attributes.friendly_name ?? id.split('.')[1]}</span>
-            <span className="light-state">{!e ? 'Nicht gefunden' : on ? (pct != null ? `${pct} %` : 'An') : 'Aus'}</span>
-          </button>
-        )
-      })}
-      <button className={`light-panel all-off ${allOnCount ? 'on' : ''}`} disabled={busy || !all.length} onClick={toggleAll}>
-        <span className="light-icon"><Icon.power size={30} /></span>
-        <span className="light-name">{allOnCount ? 'Alle Lichter aus' : 'Alle Lichter an'}</span>
-        <span className="light-state">{!all.length ? 'Nicht gefunden' : allOnCount ? `${allOnCount} an · tippen: aus` : 'Alles aus · tippen: an'}</span>
-      </button>
+    <button className={`light-panel ${shown ? 'on' : ''} ${wish !== null ? 'pending' : ''} ${e ? '' : 'missing'}`}
+      disabled={!e} onClick={press} aria-pressed={shown}>
+      <span className="light-icon"><Icon.bulb size={30} /></span>
+      <span className="light-name">{name ?? e?.attributes.friendly_name ?? id.split('.')[1]}</span>
+      <span className="light-state">{!e ? 'Nicht gefunden' : wish !== null ? (wish ? 'Schalte an…' : 'Schalte aus…') : shown ? (pct != null ? `${pct} %` : 'An') : 'Aus'}</span>
+    </button>
+  )
+}
+
+/**
+ * „Alle Lichter aus/an". Schaltet die Entities direkt (homeassistant.turn_on/off) statt über
+ * ein HA-Skript – damit stimmen Knopf und Wirkung immer überein. Solange nicht alle Lichter
+ * den Zielzustand haben, bleibt der Knopf im „Schalte…"-Zustand und fasst nach 2,5 s einzeln
+ * nach; Zigbee/Matter verschluckt Sammelbefehle gelegentlich (genau das fühlte sich kaputt an).
+ * Nochmal tippen dreht die Richtung sofort um.
+ */
+function AllLightsPanel({ ids, entities }: { ids: string[]; entities: EntityMap }) {
+  const ha = useHa()
+  const known = ids.map((id) => entities[id]).filter(Boolean)
+  const total = known.length
+  const onCount = known.filter((e) => e.state === 'on').length
+  const [target, setTarget] = useState<'on' | 'off' | null>(null)
+  const reached = target !== null && (target === 'on' ? onCount === total : onCount === 0)
+  if (reached) setTarget(null) // Ziel erreicht – State-Anpassung im Render statt Effekt
+
+  const send = (t: 'on' | 'off', list: string[]) => {
+    if (list.length) ha.callService('homeassistant', t === 'on' ? 'turn_on' : 'turn_off', { entity_id: list })
+  }
+
+  useEffect(() => {
+    if (!target) return
+    const retry = setTimeout(() => {
+      const missing = known.filter((e) => (e.state === 'on') !== (target === 'on')).map((e) => e.entity_id)
+      missing.forEach((id) => send(target, [id])) // einzeln nachfassen
+    }, 2500)
+    const giveUp = setTimeout(() => setTarget(null), 9000)
+    return () => { clearTimeout(retry); clearTimeout(giveUp) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, onCount, total])
+
+  const press = () => {
+    if (!total) return
+    const t: 'on' | 'off' = target ? (target === 'on' ? 'off' : 'on') : onCount > 0 ? 'off' : 'on'
+    setTarget(t)
+    send(t, known.map((e) => e.entity_id))
+  }
+
+  const label = target ? (target === 'on' ? 'Alle Lichter an' : 'Alle Lichter aus')
+    : onCount ? 'Alle Lichter aus' : 'Alle Lichter an'
+  const state = !total ? 'Nicht gefunden'
+    : target ? `Schalte ${target === 'on' ? 'an' : 'aus'}… ${onCount}/${total}`
+      : onCount ? `${onCount} von ${total} an` : 'Alles aus'
+  return (
+    <button className={`light-panel all-off ${onCount ? 'on' : ''} ${target ? 'pending' : ''}`} disabled={!total} onClick={press}>
+      <span className="light-icon"><Icon.power size={30} /></span>
+      <span className="light-name">{label}</span>
+      <span className="light-state">{state}</span>
+    </button>
+  )
+}
+
+/** Übersicht: bis zu 4 frei wählbare Lichter (Einstellungen) + Umschalter „Alle Lichter aus/an" */
+export function LightsWidget() {
+  const entities = useEntities()
+  const s = useSettings()
+  const lights = s.lights.slice(0, MAX_LIGHTS)
+  return (
+    <div className="lights" style={{ gridTemplateColumns: `repeat(${lights.length + 1}, minmax(0, 1fr))` }}>
+      {lights.map((id) => (
+        <LightPanel key={id} id={id} name={lightLabel(id, entities[id]?.attributes.friendly_name)} e={entities[id]} />
+      ))}
+      <AllLightsPanel ids={s.allLights} entities={entities} />
     </div>
   )
 }
