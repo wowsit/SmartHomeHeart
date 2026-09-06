@@ -157,13 +157,22 @@ export function SmarthomePage() {
   )
 }
 
-/** Übersicht: 4 Panels für die wichtigsten Lichter (config.lights) */
+/** Übersicht: 3 Panels für die wichtigsten Lichter (config.lights) + Umschalter „Alle Lichter aus/an" (config.allLights ↔ HA-Skripte) */
 export function LightsWidget() {
   const entities = useEntities()
   const ha = useHa()
+  const [busy, setBusy] = useState(false)
+  const all = config.allLights.map((id) => entities[id]).filter(Boolean)
+  const allOnCount = all.filter((e) => e.state === 'on').length
+  // Umschalter: solange etwas an ist → „Alle Lichter aus“, sonst → „Alle Lichter an“ (spiegelt script.alle_lichter_aus/_an in HA)
+  const toggleAll = async () => {
+    if (busy || !all.length) return
+    setBusy(true)
+    try { await ha.callService('script', allOnCount ? 'alle_lichter_aus' : 'alle_lichter_an') } finally { setTimeout(() => setBusy(false), 800) }
+  }
   return (
     <div className="lights">
-      {config.lights.slice(0, 4).map(({ entity: id, name }) => {
+      {config.lights.slice(0, 3).map(({ entity: id, name }) => {
         const e = entities[id]
         const on = e?.state === 'on'
         const b = e?.attributes.brightness as number | undefined
@@ -177,6 +186,11 @@ export function LightsWidget() {
           </button>
         )
       })}
+      <button className={`light-panel all-off ${allOnCount ? 'on' : ''}`} disabled={busy || !all.length} onClick={toggleAll}>
+        <span className="light-icon"><Icon.power size={30} /></span>
+        <span className="light-name">{allOnCount ? 'Alle Lichter aus' : 'Alle Lichter an'}</span>
+        <span className="light-state">{!all.length ? 'Nicht gefunden' : allOnCount ? `${allOnCount} an · tippen: aus` : 'Alles aus · tippen: an'}</span>
+      </button>
     </div>
   )
 }

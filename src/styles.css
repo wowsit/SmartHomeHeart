@@ -344,6 +344,10 @@ h3 { font-size: var(--t-xs); font-weight: 600; color: var(--muted); text-transfo
 .light-name { font-size: var(--t-base); font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .light-state { font-size: var(--t-sm); color: var(--faint); }
 .light-panel.on .light-state { color: var(--amber-700); font-weight: 500; }
+/* „Alle Lichter aus": neutral statt amber, Icon wird nur dunkel, wenn noch etwas an ist */
+.light-panel.all-off.on .light-icon { background: var(--g-900); color: var(--g-50); }
+.light-panel.all-off.on .light-state { color: var(--text-2); }
+.light-panel:disabled { opacity: .6; }
 
 /* ===== Kalender-Seite: Kopf mit Zurück + Plus ===== */
 .cal-head { gap: var(--s-4); }

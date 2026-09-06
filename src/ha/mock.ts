@@ -17,6 +17,9 @@ function initialEntities(): EntityMap {
     sw('switch.wohnzimmer', 'Wohnzimmer', true),
     sw('switch.esszimmer', 'Esszimmer', true),
     sw('switch.licht_wohnen', 'Licht Wohnen', true),
+    sw('switch.stehtlampe_wohnzimmer', 'Stehtlampe wohnzimmer', true),
+    light('light.esszimmer_deckenlampe', 'Esszimmer deckenlampe', true, 71),
+    light('light.kajplats_e27_ws_globe_1521lm', 'Küche', true, 200),
     light('light.wohnzimmer_decke', 'Deckenlampe', true, 180),
     light('light.wohnzimmer_stehlampe', 'Stehlampe', true, 90),
     climate('climate.wohnzimmer', 'Heizung', 21.4, 22),
@@ -96,8 +99,12 @@ export class MockBackend implements HaBackend {
     this.patch(m.entity_id, { attributes: { ...m.attributes, media_title: title, media_artist: artist, media_duration: dur, media_position: 0, media_position_updated_at: new Date().toISOString() } })
   }
 
-  async callService(domain: string, service: string, data: Record<string, any> = {}) {
+  async callService(domain: string, service: string, data: Record<string, any> = {}): Promise<void> {
     await new Promise((r) => setTimeout(r, 120)) // simulierte Latenz
+    if (domain === 'script' && (service === 'alle_lichter_aus' || service === 'alle_lichter_an')) {
+      // Demo: HA-Skripte „Alle Lichter aus/an“ nachbilden
+      return this.callService('homeassistant', service === 'alle_lichter_aus' ? 'turn_off' : 'turn_on', { entity_id: config.allLights })
+    }
     const ids: string[] = ([] as string[]).concat(data.entity_id ?? [])
     for (const id of ids) {
       const e = this.entities[id]

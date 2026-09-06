@@ -404,3 +404,14 @@ Schnelldiagnose: `docker ps -a | grep otbr` · `docker exec otbr ot-ctl state` (
 (darf nur `dev wpan0` zeigen). Dongles nicht umstecken; sie sind per Seriennummer eingebunden, aber Thread braucht danach Minuten.
 
 Anleitung, wie Viktor günstig neu eingebunden wird: `docs/VIKTOR-SETUP.md`.
+
+## 16. Licht-Bedienung (2026-09-05)
+
+- Eine Automation „Esszimmer: Schalter und Lampen synchron“ war kurz aktiv und wurde auf Wunsch wieder entfernt (5.9.2026).
+- **Wohnzimmer aufgeräumt:** Raum zeigt nur noch die Stehlampe (`switch.stehtlampe_wohnzimmer`, An/Aus).
+  `switch.wohnzimmer` (Decke) bleibt über „Licht Wohnen“ und „Alle Lichter aus“ erreichbar.
+- **„Alle Lichter aus/an“:** HA-Skripte `script.alle_lichter_aus` / `script.alle_lichter_an` (`assistant/homeassistant/scripts.yaml`,
+  für Assist freigegeben → „Hey Haus, alles aus“). Küche (Matter) läuft im eigenen `parallel`-Zweig, damit eine nicht
+  erreichbare Birne die Zigbee-Lichter nicht ~50 s blockiert. Im Dashboard ist das 4. Panel des Licht-Widgets ein
+  Umschalter: solange etwas an ist „Alle Lichter aus“, sonst „Alle Lichter an“; Zustandsanzeige über `config.allLights`.
+  Neue Lichter in beiden Listen eintragen.
