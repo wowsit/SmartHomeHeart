@@ -3,6 +3,7 @@ import { config } from '../config'
 import { useHa } from '../ha/useHa'
 import type { AssistLike, AssistState } from '../ha/types'
 import { Icon } from './Icons'
+import { micLocked, onMicLock } from '../ha/micLock'
 
 /**
  * Sprachassistent „Haus“ auf dem Dashboard.
@@ -28,6 +29,13 @@ export function Assistant() {
   }, [ha])
   useEffect(() => ha.subscribeAssistRuns(setRemote), [ha])
 
+  // Wake-Word-Aufnahme braucht das Mikrofon exklusiv → Assistent pausiert und startet danach neu.
+  useEffect(() => onMicLock((locked) => {
+    if (!assist) return
+    if (locked) { assist.stop(); setArmed(false) }
+    else if (config.assistAutoStart) assist.start().then(() => setArmed(true)).catch(() => {})
+  }), [assist])
+
   // Eigener Lauf hat Vorrang; sonst das, was ein anderes Gerät gerade macht.
   // Ein eigener Fehler (z. B. kein Mikrofon im Browser) bleibt klein am Button – er darf weder den Bildschirm dimmen noch Handy-Befehle verdecken.
   const ownActive = own.phase !== 'idle' && own.phase !== 'error'
@@ -35,7 +43,7 @@ export function Assistant() {
   const active = st.phase !== 'idle'
 
   const onTap = async () => {
-    if (!assist) return
+    if (!assist || micLocked()) return
     if (ownActive) { assist.stop(); setArmed(false); return }
     await assist.listenNow()
     setArmed(true)

@@ -3,11 +3,12 @@
  * auf der Startseite bzw. im „Alle Lichter"-Knopf liegen. Alles wird lokal
  * gespeichert (siehe settings.ts) und wirkt sofort, ohne Neu-Build.
  */
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useEntities } from '../ha/useHa'
 import { useNow } from '../hooks/useNow'
 import { Icon } from './Icons'
 import { MAX_LIGHTS, lightLabel, resetSettings, setSettings, useSettings, type ThemeMode } from '../settings'
+import { WakeWordSheet } from './WakeWord'
 import type { EntityMap } from '../ha/types'
 
 const THEMES: { id: ThemeMode; label: string; icon: 'sun' | 'moon' | 'cloudSun' }[] = [
@@ -62,6 +63,7 @@ function EntityPicker({ options, selected, onChange, limit }: {
 
 export function SettingsSheet({ onClose }: { onClose: () => void }) {
   const s = useSettings()
+  const [wakeWord, setWakeWord] = useState(false)
   const entities = useEntities()
   const options = switchableEntities(entities)
   // Bereits gewählte IDs, die HA (noch) nicht liefert, trotzdem anzeigen – sonst wären sie unsichtbar abwählbar.
@@ -90,6 +92,15 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
           </section>
 
           <section>
+            <h3>Sprachassistent</h3>
+            <button className="cta wide" onClick={() => setWakeWord(true)}>
+              <Icon.mic size={26} /> Wake-Word anlernen
+            </button>
+            <p className="hint">Aufnahmen von „hey&nbsp;Haus“ mit euren echten Stimmen – daraus trainiert Viktor eine
+              Version, die deutlich besser anspringt als die synthetische.</p>
+          </section>
+
+          <section>
             <h3>Lichter auf der Startseite · {s.lights.length}/{MAX_LIGHTS}</h3>
             <EntityPicker options={allOptions} selected={s.lights} limit={MAX_LIGHTS}
               onChange={(lights) => setSettings({ lights })} />
@@ -101,6 +112,8 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
               onChange={(allLights) => setSettings({ allLights })} />
           </section>
         </div>
+
+        {wakeWord && <WakeWordSheet onClose={() => setWakeWord(false)} />}
 
         <div className="sheet-options">
           <button className="pill" onClick={resetSettings}>Zurücksetzen</button>
