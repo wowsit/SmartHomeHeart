@@ -50,9 +50,13 @@ export class AssistClient implements AssistLike {
   private speechSeen = false
   private lastLoudAt = 0
   private listeningSince = 0
-  /** Läuft ein Dialog mit Rückfrage weiter, hängen Folgesätze an derselben Conversation. */
+  private noiseFloor = 0.02
+  /** Läuft ein Dialog weiter, hängen Folgesätze an derselben Conversation. */
   private conversationId?: string
   private continueConversation = false
+  /** Nach jeder Antwort geht das Mikro ohne Wake Word noch einmal auf (Nachfrage-Fenster). */
+  private inFollowUp = false
+  private followUpTurns = 0
 
   constructor(conn: Connection, haUrl: string, pipelineId?: string) {
     this.conn = conn; this.haUrl = haUrl; this.pipelineId = pipelineId
@@ -115,10 +119,15 @@ export class AssistClient implements AssistLike {
    */
   private endpoint() {
     if (this.state.phase !== 'listening' || this.handlerId == null) return
-    const SILENCE_MS = 1800, LEAD_IN_MS = 6000, MAX_MS = 25000
+    // 2,6 s Stille: lange genug, um mitten im Satz Luft zu holen oder nachzudenken.
+    const SILENCE_MS = 2600, MAX_MS = 30000
+    const LEAD_IN_MS = this.inFollowUp ? 8000 : 6000
     const now = Date.now()
     if (!this.listeningSince) this.listeningSince = now
-    if (this.level > 0.06) { this.speechSeen = true; this.lastLoudAt = now }
+    // Schwelle wandert mit dem Raumrauschen mit; fest 0.06 hat leise Sprecher als Stille gewertet.
+    const speechLevel = Math.max(0.035, this.noiseFloor + 0.03)
+    if (this.level > speechLevel) { this.speechSeen = true; this.lastLoudAt = now }
+    else this.noiseFloor = Math.min(0.1, Math.max(0.008, this.noiseFloor * 0.99 + this.level * 0.01))
     const spoke = this.speechSeen && now - this.lastLoudAt > SILENCE_MS
     const nobody = !this.speechSeen && now - this.listeningSince > LEAD_IN_MS
     const tooLong = now - this.listeningSince > MAX_MS
@@ -146,6 +155,8 @@ export class AssistClient implements AssistLike {
     this.stopped = true
     this.conversationId = undefined
     this.continueConversation = false
+    this.inFollowUp = false
+    this.followUpTurns = 0
     this.level = 0
     this.handlerId = null
     this.unsubSafe()
@@ -158,6 +169,9 @@ export class AssistClient implements AssistLike {
   async listenNow() {
     if (this.stopped) { await this.start(); if (this.stopped) return }
     if (this.running) { this.unsubSafe(); this.running = false }
+    this.inFollowUp = false
+    this.followUpTurns = 0
+    this.conversationId = undefined
     this.loop('stt')
   }
 
@@ -172,7 +186,7 @@ export class AssistClient implements AssistLike {
     this.running = true
     this.handlerId = null
     if (startStage === 'stt') this.armListening()
-    else this.conversationId = undefined
+    else { this.conversationId = undefined; this.inFollowUp = false; this.followUpTurns = 0 }
     if (startStage === 'stt') this.set({ phase: 'listening', heard: undefined, answer: undefined, source: 'local' })
     else this.set({ phase: 'idle', heard: undefined, answer: undefined, source: 'local' })
     try {
@@ -217,6 +231,8 @@ export class AssistClient implements AssistLike {
         break
       case 'stt-end':
         this.handlerId = null
+        // Es wurde wirklich gesprochen → das Nachfrage-Budget beginnt von vorn.
+        this.followUpTurns = 0
         this.set({ phase: 'thinking', heard: d.stt_output?.text || '…' })
         break
       case 'intent-progress': {
@@ -229,7 +245,8 @@ export class AssistClient implements AssistLike {
         const out = d.intent_output ?? {}
         // Stellt der Assistent eine Rückfrage, hält HA die Conversation offen → danach direkt wieder zuhören.
         this.continueConversation = !!out.continue_conversation
-        this.conversationId = this.continueConversation ? out.conversation_id : undefined
+        // Conversation-ID immer behalten: auch ein freiwilliger Folgesatz soll den Kontext kennen.
+        this.conversationId = out.conversation_id ?? this.conversationId
         this.set({ answer: out.response?.speech?.plain?.speech ?? this.state.answer ?? '' })
         break
       }
@@ -244,7 +261,8 @@ export class AssistClient implements AssistLike {
         if (d.code === 'wake-word-timeout' || d.code === 'timeout' || d.code === 'stt-no-text-recognized') {
           // normal: niemand hat gesprochen → still neu starten
           this.running = false; this.unsubSafe()
-          if (d.code === 'stt-no-text-recognized') this.finish(1500); else this.retry(50)
+          // Nichts gesagt → kein neues Nachfrage-Fenster, sonst hängt das Mikro endlos offen.
+          if (d.code === 'stt-no-text-recognized') this.finish(1200, { followUp: false }); else this.retry(50)
         } else {
           this.set({ phase: 'error', error: d.message ?? d.code })
           this.running = false; this.unsubSafe()
@@ -264,22 +282,35 @@ export class AssistClient implements AssistLike {
     this.handlerId = null
     const a = this.audioEl ?? (this.audioEl = new Audio())
     a.src = url
-    a.onended = () => this.finish(3500)
-    a.onerror = () => this.finish(3500)
-    a.play().catch(() => this.finish(3500))
+    // Nach einer Antwort nur kurz Luft holen, damit man sofort nachfragen kann.
+    const pause = () => (this.state.answer ? 700 : 3500)
+    a.onended = () => this.finish(pause())
+    a.onerror = () => this.finish(pause())
+    a.play().catch(() => this.finish(pause()))
   }
 
-  /** Antwort kurz stehen lassen; nach einer Rückfrage geht das Mikro direkt wieder auf, sonst zurück aufs Wake Word. */
-  private finish(ms: number) {
-    const followUp = this.continueConversation
+  /**
+   * Nach jeder Antwort öffnet sich ein Nachfrage-Fenster: das Mikro geht ohne Wake Word noch einmal
+   * auf (gleiche Conversation, also mit Kontext) und fällt still aufs Wake Word zurück, wenn niemand
+   * spricht. `followUp: false` erzwingt den direkten Rückfall (z. B. wenn gar nichts verstanden wurde).
+   */
+  private finish(ms: number, opts: { followUp?: boolean } = {}) {
+    const MAX_FOLLOW_UPS = 3
+    const wanted = opts.followUp ?? (this.continueConversation || !!this.state.answer)
+    const followUp = wanted && this.followUpTurns < MAX_FOLLOW_UPS
     this.continueConversation = false
     setTimeout(() => {
       if (this.stopped) return
       if (followUp) {
+        this.followUpTurns++
+        this.inFollowUp = true
         this.set({ phase: 'idle', answer: this.state.answer })
         if (!this.running) this.loop('stt')
         return
       }
+      this.inFollowUp = false
+      this.followUpTurns = 0
+      this.conversationId = undefined
       this.set({ phase: 'idle', heard: undefined, answer: undefined })
       if (!this.running) this.loop('wake_word')
     }, ms)
