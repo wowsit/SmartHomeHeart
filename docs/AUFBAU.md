@@ -469,3 +469,11 @@ docker rm -f openwakeword && docker run -d --name openwakeword --restart unless-
 `SPRACHASSISTENT-OPTIMIERUNG.md`, Abschnitt 5). Das Wake Word wird erst mit einem Satelliten (HA Voice
 Preview Edition oder Pi + USB-Mikro mit `wyoming-satellite`) benutzbar; in der Pipeline „Haus (Claude)"
 ist dann unter Wake Word `hey_haus` statt `hey_jarvis` zu wählen.
+
+## 19. Sensoren, Präsenz, Anlage & Wakeup-Song (2026-09-08)
+
+- **Raumklima:** Zigbee TS0201 drinnen/draußen → Kopfzeile der Übersicht (`config.climate`, `src/components/Climate.tsx`).
+- **Blumen gießen:** 4 Gießsensoren AOYAN AY-303Z (`config.plants`, Schwelle `plantMoistureMin` = 30 % Bodenfeuchte). Meldung auf Übersicht + Bildschirmschoner, sobald ein Sensor darunter liegt; Sensoren ohne Wert werden ignoriert.
+- **Präsenz Küche/Büro:** HA-Automationen `praesenz_kueche_licht` (Steckdose Küchenlicht + Matter-Deckenlicht, parallel) und `praesenz_buero_bodenlampe`; aus nach 1 min ohne Präsenz.
+- **Anlage** (`switch.anlage_stecker`): Automation `anlage_bei_musik_an` schaltet ein, sobald `media_player.wohnzimmer_b06` spielt; `script.musik_abspielen` schaltet zusätzlich vorab ein. Aus nur per `script.anlage_aus` (Assist: „Anlage aus“) oder nach dem Wakeup-Song.
+- **Wakeup-Song:** Helfer in `assistant/homeassistant/packages/wakeup.yaml` (`homeassistant: packages:` in configuration.yaml). Dashboard Musik-Seite (`src/components/Wakeup.tsx`): Mikro → 4 s Aufnahme → REST `/api/stt/stt.groq_whisper` → `music_assistant.search` (braucht `config.musicAssistantEntryId`) → Titel + URI in `input_text`. Automation `wakeup_song`: Anlage an, 5 s, Lautstärke 40 %, genau ein Track, warten bis fertig (max. 15 min), Stop + Anlage aus. Läuft täglich, solange `input_boolean.wakeup_aktiv` an ist.

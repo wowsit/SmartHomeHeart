@@ -41,3 +41,134 @@
       source: '{{ trigger.platform }}'
   mode: queued
   max: 3
+
+# ---- Präsenz Küche → Deckenlicht (Matter-Birne) + Steckdose Küchenlicht – Viktor 2026-09-08 ----
+# Der Melder (ZHA, _TZE200_crq3r3la) hat eine eigene Nachlaufzeit; wir warten zusätzlich 1 min ohne Präsenz,
+# bevor das Licht ausgeht. Die Matter-Birne läuft in einem eigenen parallel-Zweig (continue_on_error), damit ein
+# nicht erreichbares Deckenlicht die Steckdose nicht blockiert (Matter-Timeout ~50 s).
+- id: praesenz_kueche_licht
+  alias: 'Präsenz Küche: Licht an/aus'
+  mode: restart
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.presensmelder_kuche_occupancy
+    to: 'on'
+    id: an
+  - trigger: state
+    entity_id: binary_sensor.presensmelder_kuche_occupancy
+    to: 'off'
+    for:
+      minutes: 1
+    id: aus
+  actions:
+  - parallel:
+    - action: switch.turn_{{ trigger.id }}
+      target:
+        entity_id: switch.stecker_kuchenlicht
+      continue_on_error: true
+    - action: light.turn_{{ trigger.id }}
+      target:
+        entity_id: light.kajplats_e27_ws_globe_1521lm
+      continue_on_error: true
+
+# ---- Präsenz Büro → Bodenlampe – Viktor 2026-09-08 ----
+- id: praesenz_buero_bodenlampe
+  alias: 'Präsenz Büro: Bodenlampe an/aus'
+  mode: restart
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.buro_presensmelder_occupancy
+    to: 'on'
+    id: an
+  - trigger: state
+    entity_id: binary_sensor.buro_presensmelder_occupancy
+    to: 'off'
+    for:
+      minutes: 1
+    id: aus
+  actions:
+  - action: switch.turn_{{ trigger.id }}
+    target:
+      entity_id: switch.burozimmer_bodenlampe
+
+# ---- Anlage automatisch an, sobald Musik läuft – Viktor 2026-09-08 ----
+# Gilt für jede Quelle (Sprache, Dashboard-Schnellstart, Handy). Eine bereits eingeschaltete Anlage wird
+# nicht angefasst; ausgeschaltet wird nur per "Anlage aus" (script.anlage_aus) oder nach dem Wakeup-Song.
+- id: anlage_bei_musik_an
+  alias: 'Anlage: bei Musik automatisch an'
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: media_player.wohnzimmer_b06
+    to: playing
+  conditions:
+  - condition: state
+    entity_id: switch.anlage_stecker
+    state: 'off'
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.anlage_stecker
+
+# ---- Wakeup-Song: zur eingestellten Uhrzeit genau einen Song, danach alles wieder aus – Viktor 2026-09-08 ----
+# Song/URI/Uhrzeit/Aktiv kommen aus dem Dashboard (Musik → Wakeup-Song), Helfer in packages/wakeup.yaml.
+- id: wakeup_song
+  alias: 'Wakeup-Song abspielen'
+  mode: single
+  triggers:
+  - trigger: time
+    at: input_datetime.wakeup_zeit
+  conditions:
+  - condition: state
+    entity_id: input_boolean.wakeup_aktiv
+    state: 'on'
+  - condition: template
+    value_template: "{{ states('input_text.wakeup_song_uri') not in ['', 'unknown', 'unavailable'] }}"
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.anlage_stecker
+  - delay:
+      seconds: 5
+  - action: media_player.volume_set
+    target:
+      entity_id: media_player.wohnzimmer_b06
+    data:
+      volume_level: 0.4
+  - action: music_assistant.play_media
+    target:
+      entity_id: media_player.wohnzimmer_b06
+    data:
+      media_id: "{{ states('input_text.wakeup_song_uri') }}"
+      media_type: track
+      enqueue: replace
+      radio_mode: false
+  # warten, bis der Song läuft (max. 45 s) …
+  - wait_for_trigger:
+    - trigger: state
+      entity_id: media_player.wohnzimmer_b06
+      to: playing
+    timeout:
+      seconds: 45
+    continue_on_timeout: true
+  # … und bis er zu Ende ist (Queue leer → idle/off/paused), spätestens nach 15 min
+  - wait_for_trigger:
+    - trigger: state
+      entity_id: media_player.wohnzimmer_b06
+      from: playing
+      for:
+        seconds: 3
+    timeout:
+      minutes: 15
+    continue_on_timeout: true
+  - action: media_player.media_stop
+    target:
+      entity_id: media_player.wohnzimmer_b06
+    continue_on_error: true
+  - action: media_player.clear_playlist
+    target:
+      entity_id: media_player.wohnzimmer_b06
+    continue_on_error: true
+  - action: switch.turn_off
+    target:
+      entity_id: switch.anlage_stecker

@@ -45,6 +45,10 @@ export interface HaBackend {
   subscribeEntities(cb: (entities: EntityMap) => void): () => void
   subscribeConnection(cb: (state: ConnState) => void): () => void
   callService(domain: string, service: string, data?: Record<string, any>): Promise<void>
+  /** Service mit Rückgabewert (return_response), z. B. music_assistant.search */
+  callServiceWithResponse(domain: string, service: string, data?: Record<string, any>): Promise<any>
+  /** Sprache → Text über die STT-Engine von HA (16 kHz mono 16-bit WAV). */
+  transcribe(wav: Blob): Promise<string>
   getForecast(entityId: string): Promise<ForecastDay[]>
   getCalendarEvents(entityIds: string[], start: Date, end: Date): Promise<CalendarEvent[]>
   /** Termin anlegen (HA-Service calendar.create_event) */

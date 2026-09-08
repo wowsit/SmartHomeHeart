@@ -62,6 +62,35 @@ export const config = {
     { name: 'Rock', mediaId: 'Rock Classics', mediaType: 'playlist', radio: true },
     { name: 'Fokus', mediaId: 'Focus', mediaType: 'playlist', radio: true },
   ] as { name: string; mediaId: string; mediaType: 'playlist' | 'track' | 'artist' | 'album'; radio: boolean }[],
+  /** Stereoanlage an Schaltsteckdose (SONOFF S60ZBTPF). Geht per HA-Automation automatisch an, sobald Musik läuft;
+   *  aus nur per Sprache („Anlage aus“ → script.anlage_aus) oder nach dem Wakeup-Song. [2026-09-08] */
+  anlage: 'switch.anlage_stecker',
+  /** Wakeup-Song (Musik-Seite): HA-Helfer aus assistant/homeassistant/packages/wakeup.yaml; Abspielen macht die
+   *  HA-Automation `wakeup_song` (ein Song, danach Anlage aus). */
+  wakeup: {
+    song: 'input_text.wakeup_song',
+    uri: 'input_text.wakeup_song_uri',
+    time: 'input_datetime.wakeup_zeit',
+    active: 'input_boolean.wakeup_aktiv',
+  },
+  /** STT-Entity für die Spracheingabe des Wakeup-Songs (REST /api/stt/<entity>), gleiche Engine wie die Assist-Pipeline. */
+  sttEngine: 'stt.groq_whisper',
+  /** Music-Assistant-Config-Entry (nötig für music_assistant.search, um den gesprochenen Song eindeutig aufzulösen). */
+  musicAssistantEntryId: '01M1RJHBH41VVGAW74VFXJXYDX',
+  /** Raumklima (Zigbee TS0201, seit 2026-09-08) für die Kopfzeile der Übersicht. */
+  climate: {
+    indoor: { temperature: 'sensor.tempratur_sensor_drinnen_temperature', humidity: 'sensor.tempratur_sensor_drinnen_humidity' },
+    outdoor: { temperature: 'sensor.tempratur_sensor_draussen_temperature', humidity: 'sensor.tempratur_sensor_draussen_humidity' },
+  },
+  /** Gießsensoren (AOYAN AY-303Z, Bodenfeuchte in %). Liegt ein Wert unter `plantMoistureMin`, erscheint auf der
+   *  Übersicht und im Bildschirmschoner die Meldung „Blumen gießen“. */
+  plants: [
+    { entity: 'sensor.giesssensor_kuche_humidity', name: 'Küche' },
+    { entity: 'sensor.giesssensor_wohntimmer_humidity', name: 'Wohnzimmer' },
+    { entity: 'sensor.giesssensor_wohntimmer_humidity_2', name: 'Wohnzimmer 2' },
+    { entity: 'sensor.giesssensor_hinten_ecke_wohnzimmer_humidity', name: 'Wohnzimmer Ecke hinten' },
+  ] as { entity: string; name: string }[],
+  plantMoistureMin: 30,
   /** In HA sind noch keine Szenen angelegt (scenes.yaml leer) – daher leer statt Platzhalter. */
   scenes: [] as { id: string; name: string }[],
   rooms: [

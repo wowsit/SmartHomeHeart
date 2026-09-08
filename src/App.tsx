@@ -9,6 +9,8 @@ import { LightsWidget, RoomSummary, SmarthomePage } from './components/Smarthome
 import { Icon } from './components/Icons'
 import { Assistant } from './components/Assistant'
 import { SettingsSheet, ThemeApplier } from './components/Settings'
+import { IndoorOutdoor, PlantAlert } from './components/Climate'
+import { WakeupCard } from './components/Wakeup'
 
 type Page = 'home' | 'smarthome' | 'calendar' | 'music'
 const NAV: { id: Page; label: string; icon: keyof typeof Icon }[] = [
@@ -62,9 +64,13 @@ function HomePagePortrait({ openCalendar }: { openCalendar: () => void }) {
   return (
     <div className="page home-portrait">
       <header className="hero">
-        <Clock />
+        <div className="hero-left">
+          <Clock />
+          <IndoorOutdoor />
+        </div>
         <Weather compact />
       </header>
+      <PlantAlert />
       <CalendarWidget onOpen={openCalendar} />
       <LightsWidget />
       <MediaPlayer compact />
@@ -98,6 +104,7 @@ function Screensaver({ onWake }: { onWake: () => void }) {
   return (
     <div className="screensaver" onPointerDown={onWake}>
       <Clock big />
+      <PlantAlert small />
     </div>
   )
 }
@@ -134,7 +141,7 @@ export default function App() {
           {page === 'home' && <HomePage openCalendar={() => setPage('calendar')} />}
           {page === 'smarthome' && <SmarthomePage />}
           {page === 'calendar' && <CalendarPage onBack={() => setPage('home')} />}
-          {page === 'music' && <div className="page music"><MediaPlayer large /><QuickPlay /></div>}
+          {page === 'music' && <div className="page music"><MediaPlayer large /><QuickPlay /><WakeupCard /></div>}
         </main>
         <Assistant />
         <ThemeApplier />
