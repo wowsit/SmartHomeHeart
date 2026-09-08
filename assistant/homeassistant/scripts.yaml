@@ -188,6 +188,17 @@ musik_abspielen:
           - playlist
           - artist
   sequence:
+  # Anlage (Steckdose) vorher einschalten, falls aus – eine laufende Anlage bleibt unverändert. [2026-09-08]
+  - if:
+    - condition: state
+      entity_id: switch.anlage_stecker
+      state: 'off'
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.anlage_stecker
+    - delay:
+        seconds: 3
   - action: music_assistant.play_media
     target:
       entity_id: media_player.wohnzimmer_b06
@@ -278,3 +289,21 @@ alle_lichter_an:
         target:
           entity_id: light.kajplats_e27_ws_globe_1521lm
         continue_on_error: true
+
+# Anlage aus – Sprachbefehl "Anlage aus" / "mach die Anlage aus" – Viktor 2026-09-08
+# Für Assist freigegeben (homeassistant/expose_entity). Einschalten passiert automatisch, sobald Musik läuft.
+anlage_aus:
+  alias: Anlage aus
+  description: >-
+    Schaltet die Stereoanlage (Steckdose) aus und stoppt vorher die Musik. Nutze das, wenn der Nutzer
+    "Anlage aus", "mach die Anlage aus", "Musik aus und Anlage aus" o. ä. sagt.
+  icon: mdi:speaker-off
+  mode: single
+  sequence:
+  - action: media_player.media_stop
+    target:
+      entity_id: media_player.wohnzimmer_b06
+    continue_on_error: true
+  - action: switch.turn_off
+    target:
+      entity_id: switch.anlage_stecker

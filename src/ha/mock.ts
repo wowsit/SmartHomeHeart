@@ -35,6 +35,20 @@ function initialEntities(): EntityMap {
     sw('switch.steckdose_flur', 'Steckdose', false),
     light('light.buero', 'Büro', true, 230),
     sw('switch.schreibtisch', 'Schreibtisch', true),
+    // Raumklima, Gießsensoren, Anlage, Wakeup-Helfer (Stand 2026-09-08)
+    ent(config.climate.indoor.temperature, '23.1', { friendly_name: 'Drinnen', unit_of_measurement: '°C' }),
+    ent(config.climate.indoor.humidity, '69', { friendly_name: 'Drinnen', unit_of_measurement: '%' }),
+    ent(config.climate.outdoor.temperature, '19.9', { friendly_name: 'Draußen', unit_of_measurement: '°C' }),
+    ent(config.climate.outdoor.humidity, '72', { friendly_name: 'Draußen', unit_of_measurement: '%' }),
+    ent(config.plants[0].entity, '18', { friendly_name: 'Giesssensor Küche', unit_of_measurement: '%' }),
+    ent(config.plants[1].entity, '55', { friendly_name: 'Giesssensor Wohnzimmer', unit_of_measurement: '%' }),
+    ent(config.plants[2].entity, '61', { friendly_name: 'Giesssensor Wohnzimmer 2', unit_of_measurement: '%' }),
+    ent(config.plants[3].entity, '24', { friendly_name: 'Giesssensor Ecke', unit_of_measurement: '%' }),
+    sw(config.anlage, 'Anlage', false),
+    ent(config.wakeup.song, 'Here Comes the Sun – The Beatles', { friendly_name: 'Wakeup-Song' }),
+    ent(config.wakeup.uri, 'library://track/1', {}),
+    ent(config.wakeup.time, '07:00:00', { friendly_name: 'Wakeup-Uhrzeit', has_time: true, has_date: false }),
+    ent(config.wakeup.active, 'on', { friendly_name: 'Wakeup aktiv' }),
     ent(config.weather, 'partlycloudy', {
       friendly_name: 'Zuhause', temperature: 19.5, humidity: 58, wind_speed: 14.2, wind_bearing: 240,
       pressure: 1014, temperature_unit: '°C', wind_speed_unit: 'km/h',
@@ -124,6 +138,12 @@ export class MockBackend implements HaBackend {
         if (service === 'media_next_track') this.nextTrack(1)
         if (service === 'media_previous_track') this.nextTrack(-1)
         if (service === 'volume_set') this.patch(id, { attributes: { ...e.attributes, volume_level: data.volume_level } })
+      } else if (domain === 'input_boolean') {
+        this.patch(id, { state: service === 'turn_on' ? 'on' : service === 'turn_off' ? 'off' : e.state === 'on' ? 'off' : 'on' })
+      } else if (domain === 'input_text' && service === 'set_value') {
+        this.patch(id, { state: String(data.value ?? '') })
+      } else if (domain === 'input_datetime' && service === 'set_datetime') {
+        this.patch(id, { state: String(data.time ?? e.state) })
       } else if (domain === 'scene') {
         const all = Object.keys(this.entities).filter((k) => k.startsWith('light.'))
         if (id === 'scene.alles_aus' || id === 'scene.gute_nacht') all.forEach((k) => this.patch(k, { state: 'off' }))
@@ -132,6 +152,16 @@ export class MockBackend implements HaBackend {
       }
     }
   }
+
+  async callServiceWithResponse(domain: string, service: string, data: Record<string, any> = {}): Promise<any> {
+    if (domain === 'music_assistant' && service === 'search') {
+      return { tracks: [{ uri: 'library://track/1', name: String(data.name ?? 'Demo-Song'), artists: [{ name: 'Demo-Band' }] }] }
+    }
+    await this.callService(domain, service, data)
+    return {}
+  }
+
+  async transcribe(): Promise<string> { await new Promise((r) => setTimeout(r, 800)); return 'Here Comes the Sun von The Beatles' }
 
   async getForecast(): Promise<ForecastDay[]> {
     const today = new Date()

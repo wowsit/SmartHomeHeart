@@ -188,6 +188,17 @@ musik_abspielen:
           - playlist
           - artist
   sequence:
+  # Anlage (Steckdose) vorher einschalten, falls aus – eine laufende Anlage bleibt unverändert. [2026-09-08]
+  - if:
+    - condition: state
+      entity_id: switch.anlage_stecker
+      state: 'off'
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.anlage_stecker
+    - delay:
+        seconds: 3
   - action: music_assistant.play_media
     target:
       entity_id: media_player.wohnzimmer_b06
@@ -196,3 +207,103 @@ musik_abspielen:
       media_type: '{{ art | default(''track'') }}'
       enqueue: replace
       radio_mode: false
+
+# Viktor per Sprache beauftragen – Viktor 2026-09-05
+viktor_beauftragen:
+  alias: Viktor beauftragen
+  description: >-
+    Schickt einen Auftrag an Viktor (KI-Entwickler). Nutze das, wenn der Nutzer eine Aenderung
+    am Haus-System, am Dashboard, an Skripten, am Sprachassistenten oder eine Programmierung/
+    Fehlersuche wuenscht, z.B. "Viktor, mach ...", "sag Viktor ...", "Auftrag an Viktor ...".
+  fields:
+    auftrag:
+      name: Auftrag
+      description: Der komplette Wortlaut dessen, was Viktor tun soll.
+      required: true
+      selector:
+        text: null
+  sequence:
+    - action: rest_command.viktor_auftrag
+      data:
+        auftrag: "{{ auftrag }}"
+    - set_conversation_response: "Alles klar, ich habe Viktor beauftragt. Er meldet sich per Slack, wenn es fertig ist."
+  mode: queued
+  max: 5
+
+# Alle Lichter aus/an – gleiche Liste wie config.allLights im Dashboard. [2026-09-05]
+# Erscheinen in HA unter Übersicht → Skripte; für Assist freigegeben (Einstellungen → Sprachassistenten).
+# Küche (Matter/Thread) läuft in einem eigenen parallel-Zweig: wenn die Birne nicht erreichbar ist, hängt der
+# Aufruf bis zum Matter-Timeout (~50 s) und würde sonst die Zigbee-Lichter blockieren.
+alle_lichter_aus:
+  alias: Alle Lichter aus
+  description: Schaltet alle Lichter im Haus aus (Wohnzimmer, Esszimmer, Stehlampe, Küche). Nutze dieses Werkzeug bei "alles aus", "alle Lichter aus", "Licht überall aus".
+  icon: mdi:lightbulb-group-off
+  mode: restart
+  sequence:
+  - parallel:
+    - action: homeassistant.turn_off
+      target:
+        entity_id:
+        - switch.wohnzimmer
+        - switch.esszimmer
+        - switch.stehtlampe_wohnzimmer
+        - light.esszimmer_deckenlampe
+      continue_on_error: true
+    - if:
+      - condition: state
+        entity_id: light.kajplats_e27_ws_globe_1521lm
+        state: 'on'
+      then:
+      - action: light.turn_off
+        target:
+          entity_id: light.kajplats_e27_ws_globe_1521lm
+        continue_on_error: true
+alle_lichter_an:
+  alias: Alle Lichter an
+  description: Schaltet alle Lichter im Haus an (Wohnzimmer, Esszimmer, Stehlampe, Küche). Nutze dieses Werkzeug bei "alles an", "alle Lichter an", "Licht überall an".
+  icon: mdi:lightbulb-group
+  mode: restart
+  sequence:
+  - parallel:
+    - sequence:
+      - action: homeassistant.turn_on
+        target:
+          entity_id:
+          - switch.wohnzimmer
+          - switch.esszimmer
+          - switch.stehtlampe_wohnzimmer
+        continue_on_error: true
+      - wait_template: "{{ states('light.esszimmer_deckenlampe') in ['on', 'off'] }}"
+        timeout: '00:00:20'
+        continue_on_timeout: true
+      - action: light.turn_on
+        target:
+          entity_id: light.esszimmer_deckenlampe
+        continue_on_error: true
+    - if:
+      - condition: state
+        entity_id: light.kajplats_e27_ws_globe_1521lm
+        state: 'off'
+      then:
+      - action: light.turn_on
+        target:
+          entity_id: light.kajplats_e27_ws_globe_1521lm
+        continue_on_error: true
+
+# Anlage aus – Sprachbefehl "Anlage aus" / "mach die Anlage aus" – Viktor 2026-09-08
+# Für Assist freigegeben (homeassistant/expose_entity). Einschalten passiert automatisch, sobald Musik läuft.
+anlage_aus:
+  alias: Anlage aus
+  description: >-
+    Schaltet die Stereoanlage (Steckdose) aus und stoppt vorher die Musik. Nutze das, wenn der Nutzer
+    "Anlage aus", "mach die Anlage aus", "Musik aus und Anlage aus" o. ä. sagt.
+  icon: mdi:speaker-off
+  mode: single
+  sequence:
+  - action: media_player.media_stop
+    target:
+      entity_id: media_player.wohnzimmer_b06
+    continue_on_error: true
+  - action: switch.turn_off
+    target:
+      entity_id: switch.anlage_stecker

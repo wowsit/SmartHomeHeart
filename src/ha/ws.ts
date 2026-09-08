@@ -65,6 +65,29 @@ export class HaWsBackend implements HaBackend {
     await haCallService(conn, domain, service, rest, entity_id ? { entity_id } : undefined)
   }
 
+  async callServiceWithResponse(domain: string, service: string, data: Record<string, any> = {}): Promise<any> {
+    const conn = await this.connPromise
+    const { entity_id, ...rest } = data
+    const res: any = await haCallService(conn, domain, service, rest, entity_id ? { entity_id } : undefined, true)
+    return res?.response
+  }
+
+  /** REST /api/stt/<engine>: Roh-WAV hochladen, Text zurück. Sprache = Deutsch. */
+  async transcribe(wav: Blob): Promise<string> {
+    const r = await fetch(`${this.url}/api/stt/${config.sttEngine}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'X-Speech-Content': 'format=wav; codec=pcm; sample_rate=16000; bit_rate=16; channel=1; language=de',
+      },
+      body: wav,
+    })
+    if (!r.ok) throw new Error(`STT ${r.status}`)
+    const j = await r.json()
+    if (j.result !== 'success') throw new Error(j.result ?? 'STT fehlgeschlagen')
+    return (j.text ?? '').trim()
+  }
+
   async getForecast(entityId: string): Promise<ForecastDay[]> {
     const conn = await this.connPromise
     const res: any = await haCallService(conn, 'weather', 'get_forecasts', { type: 'daily' }, { entity_id: entityId }, true)

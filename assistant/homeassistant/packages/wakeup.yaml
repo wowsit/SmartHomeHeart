@@ -1,0 +1,21 @@
+# Wakeup-Song (Musik-Seite im Dashboard) – Viktor 2026-09-08
+# Eingebunden über `homeassistant: packages: !include_dir_named packages` in configuration.yaml.
+# Das Dashboard schreibt Song/URI/Uhrzeit/Aktiv, die Automation `wakeup_song` (automations.yaml) spielt ab.
+input_text:
+  wakeup_song:
+    name: Wakeup-Song
+    icon: mdi:music-note
+    max: 255
+  wakeup_song_uri:
+    name: Wakeup-Song URI (Music Assistant)
+    max: 255
+input_datetime:
+  wakeup_zeit:
+    name: Wakeup-Uhrzeit
+    has_date: false
+    has_time: true
+    icon: mdi:alarm
+input_boolean:
+  wakeup_aktiv:
+    name: Wakeup-Song aktiv
+    icon: mdi:alarm-check

@@ -1,5 +1,8 @@
 
 # Loads default set of integrations. Do not remove.
+homeassistant:
+  packages: !include_dir_named packages
+
 default_config:
 
 # Load frontend themes from the themes folder
@@ -12,6 +15,14 @@ scene: !include scenes.yaml
 
 # Kalender-Helfer (calhelper container, 127.0.0.1:10400) – delete/move für CalDAV, HA kann nativ nur create
 rest_command:
+  viktor_auftrag:
+    url: !secret viktor_webhook_url
+    method: post
+    content_type: application/json
+    headers:
+      X-Viktor-Token: <redacted>
+    payload: '{"auftrag": "{{ auftrag }}", "quelle": "sprachassistent"}'
+    timeout: 20
   calhelper_delete:
     url: http://127.0.0.1:10400/delete
     method: post
@@ -22,3 +33,6 @@ rest_command:
     method: post
     content_type: application/json
     payload: '{"calendar": "{{ kalender }}", "title": "{{ titel }}", "date": "{{ datum }}", "new_start": "{{ neuer_start }}"{% if neues_ende %}, "new_end": "{{ neues_ende }}"{% endif %}{% if neuer_titel %}, "new_title": "{{ neuer_titel }}"{% endif %}}'
+
+# Musik-Sprachbefehle (Music Assistant / Apple Music) – Viktor 2026-09-05
+intent_script: !include musik_intents.yaml

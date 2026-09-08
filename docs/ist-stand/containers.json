@@ -1,26 +1,32 @@
 [
   {
-    "name": "piper",
-    "image": "rhasspy/wyoming-piper",
+    "name": "openwakeword",
+    "image": "rhasspy/wyoming-openwakeword",
     "status": "running",
     "network": "bridge",
     "restart": "unless-stopped",
     "ports": {
-      "10200/tcp": [
+      "10400/tcp": [
         {
           "HostIp": "127.0.0.1",
-          "HostPort": "10200"
+          "HostPort": "10500"
         }
       ]
     },
     "binds": [
-      "/home/wowsit/piper-data:/data"
+      "/home/wowsit/openwakeword/custom:/custom"
     ],
     "cmd": [
-      "--voice",
-      "de_DE-thorsten-medium",
-      "--length-scale",
-      "0.85"
+      "--preload-model",
+      "okay_nabu",
+      "--preload-model",
+      "hey_haus",
+      "--custom-model-dir",
+      "/custom",
+      "--threshold",
+      "0.5",
+      "--trigger-level",
+      "1"
     ],
     "env_keys": []
   },
@@ -48,6 +54,78 @@
       "GROQ_API_KEY",
       "STT_LANGUAGE",
       "STT_PROMPT"
+    ]
+  },
+  {
+    "name": "wwrec",
+    "image": "python:3.12-alpine",
+    "status": "running",
+    "network": "bridge",
+    "restart": "unless-stopped",
+    "ports": {
+      "10460/tcp": [
+        {
+          "HostIp": "172.17.0.1",
+          "HostPort": "10460"
+        }
+      ]
+    },
+    "binds": [
+      "/home/wowsit/wwrec:/app:ro",
+      "/home/wowsit/wakeword-clips:/clips"
+    ],
+    "cmd": [
+      "python",
+      "/app/wwrec.py"
+    ],
+    "env_keys": []
+  },
+  {
+    "name": "otbr",
+    "image": "openthread/border-router:latest",
+    "status": "exited",
+    "network": "host",
+    "restart": "always",
+    "ports": {},
+    "binds": [
+      "/home/wowsit/homeassistant-stack/otbr:/data:rw"
+    ],
+    "cmd": null,
+    "env_keys": [
+      "OT_INFRA_IF",
+      "OT_RCP_DEVICE",
+      "OT_THREAD_IF",
+      "OT_WEB_LISTEN_PORT",
+      "S6_OVERLAY_VERSION"
+    ]
+  },
+  {
+    "name": "calhelper",
+    "image": "calhelper",
+    "status": "running",
+    "network": "bridge",
+    "restart": "unless-stopped",
+    "ports": {
+      "10400/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "10400"
+        }
+      ]
+    },
+    "binds": null,
+    "cmd": [
+      "python",
+      "-u",
+      "/app/calhelper.py"
+    ],
+    "env_keys": [
+      "CALDAV_PASS",
+      "CALDAV_PASS2",
+      "CALDAV_URL",
+      "CALDAV_USER",
+      "CALDAV_USER2",
+      "TZ"
     ]
   },
   {
@@ -97,24 +175,6 @@
     ]
   },
   {
-    "name": "otbr",
-    "image": "openthread/border-router:latest",
-    "status": "running",
-    "network": "host",
-    "restart": "always",
-    "ports": {},
-    "binds": [
-      "/home/wowsit/homeassistant-stack/otbr:/data:rw"
-    ],
-    "cmd": null,
-    "env_keys": [
-      "OT_INFRA_IF",
-      "OT_RCP_DEVICE",
-      "OT_THREAD_IF",
-      "S6_OVERLAY_VERSION"
-    ]
-  },
-  {
     "name": "pi-dashboard",
     "image": "nginx:alpine",
     "status": "running",
@@ -152,84 +212,5 @@
       "NJS_VERSION",
       "PKG_RELEASE"
     ]
-  },
-  {
-    "name": "openwakeword",
-    "image": "rhasspy/wyoming-openwakeword",
-    "status": "running",
-    "network": "bridge",
-    "restart": "unless-stopped",
-    "ports": {
-      "10400/tcp": [
-        {
-          "HostIp": "127.0.0.1",
-          "HostPort": "10500"
-        }
-      ]
-    },
-    "binds": [
-      "/home/wowsit/openwakeword/custom:/custom"
-    ],
-    "cmd": [
-      "--preload-model",
-      "ok_nabu",
-      "--custom-model-dir",
-      "/custom"
-    ],
-    "env_keys": []
-  },
-  {
-    "name": "calhelper",
-    "image": "calhelper",
-    "status": "running",
-    "network": "bridge",
-    "restart": "unless-stopped",
-    "ports": {
-      "10400/tcp": [
-        {
-          "HostIp": "127.0.0.1",
-          "HostPort": "10400"
-        }
-      ]
-    },
-    "binds": null,
-    "cmd": [
-      "python",
-      "-u",
-      "/app/calhelper.py"
-    ],
-    "env_keys": [
-      "CALDAV_PASS",
-      "CALDAV_URL",
-      "CALDAV_USER",
-      "TZ"
-    ]
-  },
-  {
-    "name": "whisper",
-    "image": "rhasspy/wyoming-whisper",
-    "status": "exited",
-    "network": "bridge",
-    "restart": "no",
-    "ports": {
-      "10300/tcp": [
-        {
-          "HostIp": "",
-          "HostPort": "10300"
-        }
-      ]
-    },
-    "binds": [
-      "/home/wowsit/whisper-data:/data"
-    ],
-    "cmd": [
-      "--model",
-      "tiny-int8",
-      "--language",
-      "de",
-      "--beam-size",
-      "1"
-    ],
-    "env_keys": []
   }
 ]
