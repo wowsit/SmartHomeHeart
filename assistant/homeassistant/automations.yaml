@@ -61,15 +61,29 @@
       minutes: 1
     id: aus
   actions:
-  - parallel:
-    - action: switch.turn_{{ trigger.id }}
-      target:
-        entity_id: switch.stecker_kuchenlicht
-      continue_on_error: true
-    - action: light.turn_{{ trigger.id }}
-      target:
-        entity_id: light.kajplats_e27_ws_globe_1521lm
-      continue_on_error: true
+  # Aktionsnamen dürfen kein Template sein (HA-Repair "unknown action") → choose nach trigger.id
+  - choose:
+    - conditions: "{{ trigger.id == 'an' }}"
+      sequence:
+      - parallel:
+        - action: switch.turn_on
+          target:
+            entity_id: switch.stecker_kuchenlicht
+          continue_on_error: true
+        - action: light.turn_on
+          target:
+            entity_id: light.kajplats_e27_ws_globe_1521lm
+          continue_on_error: true
+    default:
+    - parallel:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.stecker_kuchenlicht
+        continue_on_error: true
+      - action: light.turn_off
+        target:
+          entity_id: light.kajplats_e27_ws_globe_1521lm
+        continue_on_error: true
 
 # ---- Präsenz Büro → Bodenlampe – Viktor 2026-09-08 ----
 - id: praesenz_buero_bodenlampe
@@ -87,9 +101,16 @@
       minutes: 1
     id: aus
   actions:
-  - action: switch.turn_{{ trigger.id }}
-    target:
-      entity_id: switch.burozimmer_bodenlampe
+  - choose:
+    - conditions: "{{ trigger.id == 'an' }}"
+      sequence:
+      - action: switch.turn_on
+        target:
+          entity_id: switch.burozimmer_bodenlampe
+    default:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.burozimmer_bodenlampe
 
 # ---- Anlage automatisch an, sobald Musik läuft – Viktor 2026-09-08 ----
 # Gilt für jede Quelle (Sprache, Dashboard-Schnellstart, Handy). Eine bereits eingeschaltete Anlage wird
