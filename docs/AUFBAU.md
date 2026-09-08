@@ -477,3 +477,17 @@ ist dann unter Wake Word `hey_haus` statt `hey_jarvis` zu wählen.
 - **Präsenz Küche/Büro:** HA-Automationen `praesenz_kueche_licht` (Steckdose Küchenlicht + Matter-Deckenlicht, parallel) und `praesenz_buero_bodenlampe`; aus nach 1 min ohne Präsenz.
 - **Anlage** (`switch.anlage_stecker`): Automation `anlage_bei_musik_an` schaltet ein, sobald `media_player.wohnzimmer_b06` spielt; `script.musik_abspielen` schaltet zusätzlich vorab ein. Aus nur per `script.anlage_aus` (Assist: „Anlage aus“) oder nach dem Wakeup-Song.
 - **Wakeup-Song:** Helfer in `assistant/homeassistant/packages/wakeup.yaml` (`homeassistant: packages:` in configuration.yaml). Dashboard Musik-Seite (`src/components/Wakeup.tsx`): Mikro → 4 s Aufnahme → REST `/api/stt/stt.groq_whisper` → `music_assistant.search` (braucht `config.musicAssistantEntryId`) → Titel + URI in `input_text`. Automation `wakeup_song`: Anlage an, 5 s, Lautstärke 40 %, genau ein Track, warten bis fertig (max. 15 min), Stop + Anlage aus. Läuft täglich, solange `input_boolean.wakeup_aktiv` an ist.
+
+## 20. Pi nur LAN, Zigbee-Ausfall & Küchenlicht (2026-09-08)
+
+- **Pi läuft nur noch über LAN** (192.168.178.52): `nmcli radio wifi off`, IPv6 auf `eth0` wieder aktiviert (Matter/Thread
+  brauchen es; die Dual-Homing-Ursache aus §15 ist damit weg). `matter-server` → `--primary-interface eth0`,
+  `otbr` → `OT_INFRA_IF=eth0`. Wichtig: nach Env-Änderung `docker compose up -d --force-recreate --no-deps otbr`,
+  sonst läuft der alte Container weiter (`br state` = `stopped`, Lampe bekommt keine Route → „nicht verfügbar“).
+- **Zigbee komplett „nicht verfügbar“**: Beide USB-Dongles wurden um 20:22 neu eingesteckt; der MG24 (Thread) bekam
+  `/dev/ttyUSB0`, der Zigbee-Stick `/dev/ttyUSB1` – ZHA war fest auf `/dev/ttyUSB0` konfiguriert. **Fix:** HA-Container
+  bekommt `/dev/serial:/dev/serial:ro` gemountet, ZHA nutzt den stabilen Pfad
+  `/dev/serial/by-id/usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_…-if00-port0`. (udev-Symlinks wie `/dev/zigbee` sind im
+  Container nicht sichtbar.)
+- Küchenlicht (Thread, RSSI ≈ -80 dBm = schwach) ist nach dem otbr-Neustart wieder online.
+
