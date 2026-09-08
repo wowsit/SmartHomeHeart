@@ -79,8 +79,18 @@ export const config = {
   musicAssistantEntryId: '01M1RJHBH41VVGAW74VFXJXYDX',
   /** Raumklima (Zigbee TS0201, seit 2026-09-08) für die Kopfzeile der Übersicht. */
   climate: {
-    indoor: { temperature: 'sensor.tempratur_sensor_drinnen_temperature', humidity: 'sensor.tempratur_sensor_drinnen_humidity' },
-    outdoor: { temperature: 'sensor.tempratur_sensor_draussen_temperature', humidity: 'sensor.tempratur_sensor_draussen_humidity' },
+    // Drinnen = Mittelwert aus allen Innen-Temperaturen (TS0201 + die 4 Gießsensoren). [wunsch, 2026-09-08]
+    indoor: {
+      temperature: [
+        'sensor.tempratur_sensor_drinnen_temperature',
+        'sensor.giesssensor_kuche_temperature',
+        'sensor.giesssensor_wohntimmer_temperature',
+        'sensor.giesssensor_wohntimmer_temperature_2',
+        'sensor.giesssensor_hinten_ecke_wohnzimmer_temperature',
+      ],
+      humidity: ['sensor.tempratur_sensor_drinnen_humidity'],
+    },
+    outdoor: { temperature: ['sensor.tempratur_sensor_draussen_temperature'], humidity: ['sensor.tempratur_sensor_draussen_humidity'] },
   },
   /** Gießsensoren (AOYAN AY-303Z, Bodenfeuchte in %). Liegt ein Wert unter `plantMoistureMin`, erscheint auf der
    *  Übersicht und im Bildschirmschoner die Meldung „Blumen gießen“. */

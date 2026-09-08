@@ -5,13 +5,20 @@ import { Icon } from './Icons'
 const num = (s?: string) => { const n = Number(s); return s != null && s !== 'unknown' && s !== 'unavailable' && Number.isFinite(n) ? n : null }
 const fmt1 = (n: number) => n.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
-/** Kopfzeile der Übersicht: Temperatur + Luftfeuchte drinnen/draußen (Zigbee-Sensoren, seit 2026-09-08). */
+/** Mittelwert aller verfügbaren Sensorwerte (Sensoren ohne Wert werden ignoriert). */
+const avg = (entities: Record<string, { state: string } | undefined>, ids: string[]) => {
+  const vals = ids.map((id) => num(entities[id]?.state)).filter((v): v is number => v != null)
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
+}
+
+/** Kopfzeile der Übersicht: Temperatur + Luftfeuchte drinnen/draußen (Zigbee-Sensoren, seit 2026-09-08).
+ *  „Drinnen“ ist der Mittelwert aus allen Innen-Temperatursensoren (inkl. Gießsensoren). */
 export function IndoorOutdoor() {
   const entities = useEntities()
   const rows = [
     { label: 'Drinnen', ...config.climate.indoor },
     { label: 'Draußen', ...config.climate.outdoor },
-  ].map((r) => ({ label: r.label, t: num(entities[r.temperature]?.state), h: num(entities[r.humidity]?.state) }))
+  ].map((r) => ({ label: r.label, t: avg(entities, r.temperature), h: avg(entities, r.humidity) }))
   if (rows.every((r) => r.t == null)) return null
   return (
     <div className="climate-strip">
